@@ -4,6 +4,7 @@ import { RolesModule } from './roles/roles.module.js';
 import { ResourcesModule } from './resources/resources.module.js';
 import { RoleUsersModule } from './role-users/role-users.module.js';
 import { ResourceRolesModule } from './resource-roles/resource-roles.module.js';
+import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module.js';
 import { JwtAuthGuard } from './access/guards/jwt-auth.guard.js';
 import { PermissionsGuard } from './access/guards/permissions.guard.js';
 
@@ -11,15 +12,14 @@ import { PermissionsGuard } from './access/guards/permissions.guard.js';
  * AuthModule — agrupa todo lo relacionado con autenticación y autorización.
  *
  * **@Global()**: al ser global, los providers que exporta (JwtAuthGuard,
- * PermissionsGuard y los tokens USER_REPOSITORY, ROLE_REPOSITORY, etc.) están
- * disponibles en cualquier otro módulo SIN necesidad de importar AuthModule.
+ * PermissionsGuard, y los repos/servicios que cada submódulo expone) están
+ * disponibles en cualquier otro módulo.
  *
- * Esto es lo que permite que `@UseGuards(JwtAuthGuard, PermissionsGuard)` en
- * cualquier controller (de negocio o de auth) resuelva sus dependencias sin
- * tener que importar AuthModule en cada feature module.
+ * Estado en ISS-14: incluye UsersModule, RolesModule, ResourcesModule,
+ * RoleUsersModule, ResourceRolesModule y RefreshTokensModule (feature de
+ * sesiones renovables con rotación y detección de reúso).
  *
- * Estado en ISS-13: incluye UsersModule, RolesModule, ResourcesModule,
- * RoleUsersModule, ResourceRolesModule y expone los guards.
+ * El siguiente ISS (ISS-15) añadirá SessionModule con login/refresh/logout.
  */
 @Global()
 @Module({
@@ -29,6 +29,7 @@ import { PermissionsGuard } from './access/guards/permissions.guard.js';
     ResourcesModule,
     RoleUsersModule,
     ResourceRolesModule,
+    RefreshTokensModule,
   ],
   providers: [JwtAuthGuard, PermissionsGuard],
   exports: [
@@ -37,6 +38,7 @@ import { PermissionsGuard } from './access/guards/permissions.guard.js';
     ResourcesModule,
     RoleUsersModule,
     ResourceRolesModule,
+    RefreshTokensModule,
     JwtAuthGuard,
     PermissionsGuard,
   ],
