@@ -9,8 +9,10 @@ import {
   Patch,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard, PermissionsGuard } from '../../../../access/index.js';
 import {
   CreateRoleDto,
   PatchRoleDto,
@@ -18,13 +20,8 @@ import {
 } from '../../../application/dto/index.js';
 import { RolesService } from '../../../application/use-cases/roles.service.js';
 
-/**
- * Controller del feature Roles.
- *
- * Nota ISS-13: los guards de autenticación/autorización se aplicarán aquí
- * cuando existan. Por ahora los endpoints están abiertos.
- */
 @ApiTags('roles')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('roles')
 export class RolesController {
   constructor(private readonly service: RolesService) {}
@@ -53,20 +50,14 @@ export class RolesController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Reemplazar rol (PUT)' })
-  async updatePut(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateRoleDto,
-  ) {
+  async updatePut(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRoleDto) {
     const role = await this.service.updatePut(id, dto);
     return { role };
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Modificar rol (PATCH)' })
-  async updatePatch(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: PatchRoleDto,
-  ) {
+  async updatePatch(@Param('id', ParseIntPipe) id: number, @Body() dto: PatchRoleDto) {
     const role = await this.service.updatePatch(id, dto);
     return { role };
   }

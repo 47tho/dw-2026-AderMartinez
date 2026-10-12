@@ -9,8 +9,10 @@ import {
   Patch,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard, PermissionsGuard } from '../../../../access/index.js';
 import {
   ChangePasswordDto,
   CreateUserDto,
@@ -22,18 +24,14 @@ import { UsersService } from '../../../application/use-cases/users.service.js';
 /**
  * Controller del feature Users.
  *
- * Solo HTTP: recibe la petición, delega al service y devuelve la respuesta.
- * El manejo de errores es global (GlobalExceptionFilter).
- *
- * Nota ISS-13: los guards de autenticación y autorización se aplicarán aquí
- * cuando existan. Por ahora los endpoints están abiertos.
+ * **Modalidad 3 — JWT + RBAC**.
  */
 @ApiTags('usuarios')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('usuarios')
 export class UsersController {
   constructor(private readonly service: UsersService) {}
 
-  // ================== READ ==================
   @Get()
   @ApiOperation({ summary: 'Listar usuarios activos (sin password)' })
   async getAll() {
@@ -48,7 +46,6 @@ export class UsersController {
     return { user };
   }
 
-  // ================== CREATE ==================
   @Post()
   @HttpCode(201)
   @ApiOperation({ summary: 'Crear usuario (password se hashea)' })
@@ -57,7 +54,6 @@ export class UsersController {
     return { user };
   }
 
-  // ================== UPDATE ==================
   @Put(':id')
   @ApiOperation({ summary: 'Reemplazar usuario (PUT)' })
   async updatePut(
@@ -78,7 +74,6 @@ export class UsersController {
     return { user };
   }
 
-  // ================== DELETE ==================
   @Delete(':id')
   @ApiOperation({ summary: 'Eliminar usuario (físico)' })
   async deletePhysical(@Param('id', ParseIntPipe) id: number) {
@@ -93,7 +88,6 @@ export class UsersController {
     return { message: 'Usuario desactivado (borrado lógico)', user };
   }
 
-  // ================== IDENTIDAD Y PERMISOS ==================
   @Patch(':id/password')
   @ApiOperation({ summary: 'Cambiar contraseña (exige current_password)' })
   async changePassword(
@@ -105,7 +99,7 @@ export class UsersController {
   }
 
   @Get(':id/permisos')
-  @ApiOperation({ summary: 'Permisos efectivos del usuario (ISS-12)' })
+  @ApiOperation({ summary: 'Permisos efectivos del usuario' })
   async getEffectivePermissions(@Param('id', ParseIntPipe) id: number) {
     const permissions = await this.service.getEffectivePermissions(id);
     return { permissions };

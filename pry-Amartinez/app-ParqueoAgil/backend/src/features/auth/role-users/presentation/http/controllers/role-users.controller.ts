@@ -7,20 +7,15 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard, PermissionsGuard } from '../../../../access/index.js';
 import { CreateRoleUserDto } from '../../../application/dto/index.js';
 import { RoleUsersService } from '../../../application/use-cases/role-users.service.js';
 
-/**
- * Controller del feature RoleUsers.
- *
- * Orden de operaciones: getAll → getOne → assign → deactivate → reactivate.
- * No expone borrado físico: la revocación es lógica para preservar auditoría.
- *
- * Nota ISS-13: los guards de auth/autorización se aplicarán aquí.
- */
 @ApiTags('asignaciones-rol')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('asignaciones-rol')
 export class RoleUsersController {
   constructor(private readonly service: RoleUsersService) {}

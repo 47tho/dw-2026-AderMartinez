@@ -9,8 +9,10 @@ import {
   Patch,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard, PermissionsGuard } from '../../../../access/index.js';
 import {
   CreateResourceDto,
   PatchResourceDto,
@@ -18,12 +20,8 @@ import {
 } from '../../../application/dto/index.js';
 import { ResourcesService } from '../../../application/use-cases/resources.service.js';
 
-/**
- * Controller del feature Resources.
- *
- * Nota ISS-13: los guards de autenticación/autorización se aplicarán aquí.
- */
 @ApiTags('recursos')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('recursos')
 export class ResourcesController {
   constructor(private readonly service: ResourcesService) {}
@@ -52,20 +50,14 @@ export class ResourcesController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Reemplazar recurso (PUT)' })
-  async updatePut(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateResourceDto,
-  ) {
+  async updatePut(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateResourceDto) {
     const resource = await this.service.updatePut(id, dto);
     return { resource };
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Modificar recurso (PATCH)' })
-  async updatePatch(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: PatchResourceDto,
-  ) {
+  async updatePatch(@Param('id', ParseIntPipe) id: number, @Body() dto: PatchResourceDto) {
     const resource = await this.service.updatePatch(id, dto);
     return { resource };
   }

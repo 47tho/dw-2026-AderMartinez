@@ -8,22 +8,18 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard, PermissionsGuard } from '../../../../access/index.js';
 import {
   CreateResourceRoleDto,
   ListResourceRolesDto,
 } from '../../../application/dto/index.js';
 import { ResourceRolesService } from '../../../application/use-cases/resource-roles.service.js';
 
-/**
- * Controller del feature ResourceRoles.
- *
- * Orden: getAll (con filtros) → getOne → grant → deactivate → reactivate.
- *
- * Nota ISS-13: los guards de auth/autorización se aplicarán aquí.
- */
 @ApiTags('concesiones-rol')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('concesiones-rol')
 export class ResourceRolesController {
   constructor(private readonly service: ResourceRolesService) {}
