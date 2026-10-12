@@ -7,15 +7,26 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  JwtAuthGuard,
+  PermissionsGuard,
+} from '../../../../../auth/access/index.js';
 import { CreateVehicleTypeDto } from '../../../application/dto/create-vehicle-type.dto.js';
 import { VehicleTypeMapper } from '../../../application/mappers/vehicle-type.mapper.js';
 import { CreateVehicleTypeUseCase } from '../../../application/use-cases/create-vehicle-type.use-case.js';
 import { GetVehicleTypeByIdUseCase } from '../../../application/use-cases/get-vehicle-type-by-id.use-case.js';
 import { ListVehicleTypesUseCase } from '../../../application/use-cases/list-vehicle-types.use-case.js';
 
+/**
+ * Controller del feature VehicleTypes.
+ *
+ * **Modalidad 3 — JWT + RBAC**.
+ */
 @ApiTags('vehicle-types')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('vehicle-types')
 export class VehicleTypesController {
   constructor(
