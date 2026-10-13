@@ -16,9 +16,11 @@ import {
  * **Este es el que construye la matriz de permisos.**
  *
  * Reparto de referencia:
- *   - ADMIN  → los 58 recursos (administración total).
- *   - SELLER → los 11 recursos de operación (clientes, vehicle-types,
- *     parking-zones, tickets).
+ *   - ADMIN  → los 75 recursos (administración total).
+ *   - SELLER → los 18 recursos de operación (clientes, vehicle-types,
+ *     parking-zones, tickets, portería, cobro, conductores y reportes).
+ *   - DRIVER → los 14 recursos de la app del conductor (/api/me, plano,
+ *     zonas y eventos).
  *
  * Como `reconcileRole` es determinista, reejecutar el seeder **reconcilia** el
  * catálogo: concede lo que falte, reactiva lo inactivo y retira lo que sobre.
