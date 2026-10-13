@@ -8,6 +8,11 @@ import { VehicleTypeModel } from '../../../features/business/vehicle-types/infra
 import { ParkingZoneModel } from '../../../features/business/parking-zones/infrastructure/persistence/models/parking-zone.model.js';
 import { TicketModel } from '../../../features/business/tickets/infrastructure/persistence/models/ticket.model.js';
 
+// ── Integración app móvil + panel web ───────────────────────
+import { VehicleModel } from '../../../features/business/vehicles/infrastructure/persistence/models/vehicle.model.js';
+import { ParkingSpotModel } from '../../../features/business/parking-spots/infrastructure/persistence/models/parking-spot.model.js';
+import { DriverModel } from '../../../features/business/drivers/infrastructure/persistence/models/driver.model.js';
+
 // ── Auth (Fase II) ───────────────────────────────────────────
 import { UserModel } from '../../../features/auth/users/infrastructure/persistence/models/user.model.js';
 import { RoleModel } from '../../../features/auth/roles/infrastructure/persistence/models/role.model.js';
@@ -22,6 +27,8 @@ export const ALL_MODELS: any[] = [
   VehicleTypeModel,
   ParkingZoneModel,
   TicketModel,
+  VehicleModel,
+  ParkingSpotModel,
   // Auth
   UserModel,
   RoleModel,
@@ -29,6 +36,8 @@ export const ALL_MODELS: any[] = [
   RoleUserModel,
   ResourceRoleModel,
   RefreshTokenModel,
+  // Conductores (dependen de users y clients)
+  DriverModel,
 ];
 
 export function sequelizeFactory(cfg: IEnvConfig): Sequelize {
