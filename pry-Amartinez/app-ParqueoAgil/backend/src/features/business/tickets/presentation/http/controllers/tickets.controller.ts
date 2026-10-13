@@ -6,6 +6,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -19,6 +20,8 @@ import { TicketMapper } from '../../../application/mappers/ticket.mapper.js';
 import { CreateTicketUseCase } from '../../../application/use-cases/create-ticket.use-case.js';
 import { CloseTicketUseCase } from '../../../application/use-cases/close-ticket.use-case.js';
 import { GetTicketByIdUseCase } from '../../../application/use-cases/get-ticket-by-id.use-case.js';
+import { ListTicketsUseCase } from '../../../application/use-cases/list-tickets.use-case.js';
+import { ListTicketsQueryDto } from '../../../application/dto/list-tickets-query.dto.js';
 
 /**
  * Controller del feature Tickets.
@@ -34,7 +37,14 @@ export class TicketsController {
     private readonly createTicket: CreateTicketUseCase,
     private readonly closeTicket: CloseTicketUseCase,
     private readonly getTicket: GetTicketByIdUseCase,
+    private readonly listTickets: ListTicketsUseCase,
   ) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Listar tickets (paginado, filtros: status, zoneId, plate)' })
+  async list(@Query() query: ListTicketsQueryDto) {
+    return this.listTickets.execute(query);
+  }
 
   @Post()
   @HttpCode(201)

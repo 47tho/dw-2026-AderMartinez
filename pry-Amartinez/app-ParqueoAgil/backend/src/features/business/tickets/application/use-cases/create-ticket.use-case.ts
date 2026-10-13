@@ -8,6 +8,7 @@ import { ParkingZoneNotFoundException } from '../../../parking-zones/domain/exce
 import { Ticket } from '../../domain/entities/ticket.entity.js';
 import { TICKET_REPOSITORY } from '../../domain/interfaces/ticket.repository.js';
 import type { ITicketRepository } from '../../domain/interfaces/ticket.repository.js';
+import { EventsService } from '../../../events/application/events.service.js';
 import { CreateTicketDto } from '../dto/create-ticket.dto.js';
 
 @Injectable()
@@ -16,6 +17,7 @@ export class CreateTicketUseCase {
     @Inject(CLIENT_REPOSITORY) private readonly clientRepo: IClientRepository,
     @Inject(PARKING_ZONE_REPOSITORY) private readonly zoneRepo: IParkingZoneRepository,
     @Inject(TICKET_REPOSITORY) private readonly ticketRepo: ITicketRepository,
+    private readonly events: EventsService,
   ) {}
 
   async execute(dto: CreateTicketDto): Promise<Ticket> {
@@ -45,6 +47,9 @@ export class CreateTicketUseCase {
       status: 'open',
     });
 
-    return this.ticketRepo.createOpen(ticket);
+    const created = await this.ticketRepo.createOpen(ticket);
+    this.events.publishTicket('ticket.opened', created);
+    await this.events.publishOccupancy(created.parkingZoneId, created.parkingSpotId);
+    return created;
   }
 }

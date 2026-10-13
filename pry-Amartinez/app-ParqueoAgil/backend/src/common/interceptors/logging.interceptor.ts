@@ -15,6 +15,11 @@ export class LoggingInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest<Request>();
+    // En un flujo SSE cada evento pasaría por aquí: se registra solo la apertura.
+    if (Reflect.getMetadata('__sse__', context.getHandler())) {
+      this.logger.log(`${req.method} ${req.url} → flujo SSE abierto`);
+      return next.handle();
+    }
     const start = Date.now();
     return next.handle().pipe(
       tap(() => {

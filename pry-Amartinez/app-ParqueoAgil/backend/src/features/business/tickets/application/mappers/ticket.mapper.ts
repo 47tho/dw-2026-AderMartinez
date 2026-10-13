@@ -15,6 +15,21 @@ export class TicketMapper {
       discounts: t.discounts,
       total: t.total,
       status: t.status,
+      vehicleId: t.vehicleId,
+      plate: t.plate,
+      parkingSpotId: t.parkingSpotId,
+      spotCode: t.spotCode,
+      channel: t.channel,
+      fractions: t.fractions,
+      minutesPerFraction: t.minutesPerFraction,
+      pricePerFraction: t.pricePerFraction,
+      quotedAt: t.quotedAt,
+      paymentMethod: t.paymentMethod,
+      amountReceived: t.amountReceived,
+      change: t.change,
+      paymentRef: t.paymentRef,
+      authorization: t.authorization,
+      cardLabel: t.cardLabel,
     };
   }
 }
