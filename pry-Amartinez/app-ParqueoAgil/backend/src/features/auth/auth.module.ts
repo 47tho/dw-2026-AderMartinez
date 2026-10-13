@@ -5,21 +5,19 @@ import { ResourcesModule } from './resources/resources.module.js';
 import { RoleUsersModule } from './role-users/role-users.module.js';
 import { ResourceRolesModule } from './resource-roles/resource-roles.module.js';
 import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module.js';
+import { SessionModule } from './session/session.module.js';
 import { JwtAuthGuard } from './access/guards/jwt-auth.guard.js';
 import { PermissionsGuard } from './access/guards/permissions.guard.js';
 
 /**
  * AuthModule — agrupa todo lo relacionado con autenticación y autorización.
  *
- * **@Global()**: al ser global, los providers que exporta (JwtAuthGuard,
- * PermissionsGuard, y los repos/servicios que cada submódulo expone) están
- * disponibles en cualquier otro módulo.
+ * **@Global()**: al ser global, los providers que exporta están disponibles en
+ * cualquier otro módulo sin necesidad de importar AuthModule.
  *
- * Estado en ISS-14: incluye UsersModule, RolesModule, ResourcesModule,
- * RoleUsersModule, ResourceRolesModule y RefreshTokensModule (feature de
- * sesiones renovables con rotación y detección de reúso).
- *
- * El siguiente ISS (ISS-15) añadirá SessionModule con login/refresh/logout.
+ * Estado en ISS-15: incluye UsersModule, RolesModule, ResourcesModule,
+ * RoleUsersModule, ResourceRolesModule, RefreshTokensModule y SessionModule.
+ * La Fase II (Auth con RBAC) queda completa.
  */
 @Global()
 @Module({
@@ -30,6 +28,7 @@ import { PermissionsGuard } from './access/guards/permissions.guard.js';
     RoleUsersModule,
     ResourceRolesModule,
     RefreshTokensModule,
+    SessionModule,
   ],
   providers: [JwtAuthGuard, PermissionsGuard],
   exports: [
@@ -39,6 +38,7 @@ import { PermissionsGuard } from './access/guards/permissions.guard.js';
     RoleUsersModule,
     ResourceRolesModule,
     RefreshTokensModule,
+    SessionModule,
     JwtAuthGuard,
     PermissionsGuard,
   ],
