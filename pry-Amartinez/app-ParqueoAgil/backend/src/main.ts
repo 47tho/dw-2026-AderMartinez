@@ -10,7 +10,13 @@ import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor.js
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
-  app.enableCors({ origin: 'http://localhost:4200', credentials: true });
+  // Panel web (Angular, 4200) por defecto; la app Flutter en web u otros
+  // orígenes se agregan con CORS_ORIGINS separados por coma.
+  const origins = (process.env.CORS_ORIGINS ?? 'http://localhost:4200')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  app.enableCors({ origin: origins, credentials: true });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -27,7 +33,11 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('ParqueoÁgil — Backend solo Business')
-    .setDescription('API de negocio: clients, vehicle-types, parking-zones, tickets.')
+    .setDescription(
+      'API de negocio: clients, vehicle-types, parking-zones, tickets. ' +
+        'Integración: drivers y /me (app móvil), gate y pagos (portería), parking-spots, reports y events (SSE).',
+    )
+    .addBearerAuth()
     .setVersion('1.0')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
