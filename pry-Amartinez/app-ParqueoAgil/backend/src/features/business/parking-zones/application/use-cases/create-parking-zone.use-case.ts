@@ -1,4 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { BusinessRuleException } from '../../../../../common/exceptions/business-rule.exception.js';
+import { ParkingSpotsService } from '../../../parking-spots/application/parking-spots.service.js';
+import { EventsService } from '../../../events/application/events.service.js';
 import { VEHICLE_TYPE_REPOSITORY } from '../../../vehicle-types/domain/interfaces/vehicle-type.repository.js';
 import type { IVehicleTypeRepository } from '../../../vehicle-types/domain/interfaces/vehicle-type.repository.js';
 import { VehicleTypeNotFoundException } from '../../../vehicle-types/domain/exceptions/vehicle-type-not-found.exception.js';
@@ -14,6 +17,8 @@ export class CreateParkingZoneUseCase {
   constructor(
     @Inject(PARKING_ZONE_REPOSITORY) private readonly zoneRepo: IParkingZoneRepository,
     @Inject(VEHICLE_TYPE_REPOSITORY) private readonly typeRepo: IVehicleTypeRepository,
+    private readonly spots: ParkingSpotsService,
+    private readonly events: EventsService,
   ) {}
 
   async execute(dto: CreateParkingZoneDto): Promise<ParkingZone> {
@@ -24,6 +29,13 @@ export class CreateParkingZoneUseCase {
     if (type.status !== 'active') {
       throw new VehicleTypeInactiveException(dto.vehicleTypeId);
     }
-    return this.zoneRepo.create(ParkingZoneMapper.toEntity(dto));
+    if (dto.code && (await this.zoneRepo.findByCode(dto.code))) {
+      throw new BusinessRuleException(`Ya existe una zona con la letra ${dto.code}`);
+    }
+    const zone = await this.zoneRepo.create(ParkingZoneMapper.toEntity(dto));
+    // Los espacios individuales (A01, A02...) se generan con la zona.
+    await this.spots.ensureSpotsForZone(zone.id!);
+    await this.events.publishOccupancy(zone.id!);
+    return zone;
   }
 }

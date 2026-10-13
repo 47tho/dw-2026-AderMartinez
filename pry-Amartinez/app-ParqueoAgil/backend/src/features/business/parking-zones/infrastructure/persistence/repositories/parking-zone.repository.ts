@@ -22,6 +22,10 @@ export class ParkingZoneRepository implements IParkingZoneRepository {
       availableSpots: z.availableSpots,
       hourlyRate: z.hourlyRate,
       status: z.status,
+      code: z.code,
+      floor: z.floor,
+      position: z.position,
+      color: z.color,
     });
     return this.toDomain(created);
   }
@@ -40,6 +44,11 @@ export class ParkingZoneRepository implements IParkingZoneRepository {
     return found ? this.toDomain(found) : null;
   }
 
+  async findByCode(code: string): Promise<ParkingZone | null> {
+    const found = await this.repo.findOne({ where: { code } });
+    return found ? this.toDomain(found) : null;
+  }
+
   async count(): Promise<number> {
     return this.repo.count();
   }
@@ -53,6 +62,10 @@ export class ParkingZoneRepository implements IParkingZoneRepository {
       availableSpots: m.availableSpots,
       hourlyRate: Number(m.hourlyRate),
       status: (m.status as ParkingZoneStatus) ?? 'active',
+      code: m.code ?? null,
+      floor: m.floor ?? 1,
+      position: m.position ?? 0,
+      color: m.color ?? null,
     });
   }
 }

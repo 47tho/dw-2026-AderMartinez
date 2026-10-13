@@ -10,6 +10,10 @@ export class ParkingZoneMapper {
       availableSpots: dto.availableSpots ?? dto.capacity,
       hourlyRate: dto.hourlyRate,
       status: 'active',
+      code: dto.code ?? null,
+      floor: dto.floor ?? 1,
+      position: dto.position ?? 0,
+      color: dto.color ?? null,
     });
   }
 
@@ -22,6 +26,10 @@ export class ParkingZoneMapper {
       availableSpots: z.availableSpots,
       hourlyRate: z.hourlyRate,
       status: z.status,
+      code: z.code,
+      floor: z.floor,
+      position: z.position,
+      color: z.color,
     };
   }
 }

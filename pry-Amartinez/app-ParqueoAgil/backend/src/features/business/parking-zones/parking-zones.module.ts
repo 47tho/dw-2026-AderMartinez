@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { VehicleTypesModule } from '../vehicle-types/vehicle-types.module.js';
+import { ParkingSpotsModule } from '../parking-spots/parking-spots.module.js';
 import { CreateParkingZoneUseCase } from './application/use-cases/create-parking-zone.use-case.js';
 import { GetParkingZoneByIdUseCase } from './application/use-cases/get-parking-zone-by-id.use-case.js';
 import { ListParkingZonesUseCase } from './application/use-cases/list-parking-zones.use-case.js';
@@ -9,7 +10,7 @@ import { ParkingZoneSeeder } from './infrastructure/persistence/seeders/parking-
 import { ParkingZonesController } from './presentation/http/controllers/parking-zones.controller.js';
 
 @Module({
-  imports: [VehicleTypesModule],
+  imports: [VehicleTypesModule, ParkingSpotsModule],
   controllers: [ParkingZonesController],
   providers: [
     CreateParkingZoneUseCase,

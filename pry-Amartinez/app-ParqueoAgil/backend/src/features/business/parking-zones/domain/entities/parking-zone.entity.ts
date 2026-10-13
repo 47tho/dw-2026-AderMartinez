@@ -10,6 +10,10 @@ export interface ParkingZoneProps {
   availableSpots: number;
   hourlyRate: number;
   status?: ParkingZoneStatus;
+  code?: string | null;
+  floor?: number;
+  position?: number;
+  color?: string | null;
 }
 
 export class ParkingZone {
@@ -20,6 +24,10 @@ export class ParkingZone {
   availableSpots: number;
   readonly hourlyRate: number;
   readonly status: ParkingZoneStatus;
+  readonly code: string | null;
+  readonly floor: number;
+  readonly position: number;
+  readonly color: string | null;
 
   constructor(props: ParkingZoneProps) {
     this.id = props.id ?? null;
@@ -29,6 +37,10 @@ export class ParkingZone {
     this.availableSpots = props.availableSpots;
     this.hourlyRate = props.hourlyRate;
     this.status = props.status ?? 'active';
+    this.code = props.code ?? null;
+    this.floor = props.floor ?? 1;
+    this.position = props.position ?? 0;
+    this.color = props.color ?? null;
   }
 
   occupySpot(n = 1): void {
