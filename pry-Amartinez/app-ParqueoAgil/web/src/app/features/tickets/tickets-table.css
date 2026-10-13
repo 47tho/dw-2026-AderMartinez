@@ -1,0 +1,9 @@
+.table {
+  min-width: 920px;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.zone {
+  display: block;
+}

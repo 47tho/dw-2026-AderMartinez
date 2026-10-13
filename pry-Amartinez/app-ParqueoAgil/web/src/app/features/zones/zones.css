@@ -1,0 +1,26 @@
+.row-skeleton {
+  height: 2.5rem;
+  margin-bottom: var(--space-2);
+}
+.code {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.swatch {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+.note {
+  margin-top: var(--space-3);
+}
+.below {
+  margin-top: var(--space-4);
+  align-items: start;
+}
+.table-wrap:focus-visible {
+  outline-offset: -2px;
+}

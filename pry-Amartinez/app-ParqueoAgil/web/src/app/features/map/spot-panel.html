@@ -1,0 +1,68 @@
+<section class="card panel" [class.idle]="!spot()" aria-label="Detalle del espacio" aria-live="polite">
+  @if (spot(); as s) {
+    <header>
+      <h2>Espacio {{ s.code }}</h2>
+      <button type="button" class="btn sm ghost" (click)="closed.emit()">Cerrar</button>
+    </header>
+
+    <dl>
+      <div>
+        <dt>Zona</dt>
+        <dd>{{ zone()?.name ?? '—' }}</dd>
+      </div>
+      <div>
+        <dt>Estado</dt>
+        <dd>
+          @switch (s.status) {
+            @case ('free') {
+              <span class="badge ok">Libre</span>
+            }
+            @case ('occupied') {
+              <span class="badge danger">Ocupado</span>
+            }
+            @default {
+              <span class="badge">Bloqueado</span>
+            }
+          }
+        </dd>
+      </div>
+      @if (s.status === 'occupied') {
+        @let occ = occupant();
+        <div>
+          <dt>Placa</dt>
+          <dd>
+            @if (occ?.plate) {
+              <span class="plate">{{ occ.plate }}</span>
+            } @else {
+              <span class="muted">Sin placa registrada</span>
+            }
+          </dd>
+        </div>
+        @if (occ) {
+          <div>
+            <dt>Entrada</dt>
+            <dd class="num">{{ occ.entryAt | fechaHora }}</dd>
+          </div>
+          <div>
+            <dt>Tiempo</dt>
+            <dd class="num">{{ minutes() | duration }}</dd>
+          </div>
+        }
+      }
+    </dl>
+
+    @if (error()) {
+      <p class="alert error" role="alert">{{ error() }}</p>
+    }
+
+    @if (s.status === 'occupied') {
+      <p class="subtle">Un espacio ocupado no se puede bloquear: primero debe salir el vehículo.</p>
+    } @else if (canManage()) {
+      <button type="button" class="btn" [class.danger]="s.status === 'free'" (click)="toggle.emit()" [disabled]="busy()">
+        {{ busy() ? 'Guardando…' : s.status === 'blocked' ? 'Liberar espacio' : 'Bloquear espacio' }}
+      </button>
+    }
+  } @else {
+    <p class="empty">Toca un espacio del plano para ver su detalle.</p>
+  }
+</section>

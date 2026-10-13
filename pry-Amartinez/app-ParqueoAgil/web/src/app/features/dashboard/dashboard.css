@@ -1,0 +1,106 @@
+.section {
+  margin-top: var(--space-4);
+}
+
+.kpi h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+}
+.kpi .value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: var(--space-2) 0;
+}
+.kpi .value small {
+  font-size: 1rem;
+  color: var(--text-2);
+}
+.kpi .value.ok {
+  color: var(--ok);
+}
+
+.meter {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+  margin-bottom: var(--space-2);
+}
+.meter.thin {
+  height: 6px;
+  margin: var(--space-1) 0 0;
+}
+.meter span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width 400ms ease;
+}
+.meter.full span {
+  background: var(--danger);
+}
+@media (prefers-reduced-motion: reduce) {
+  .meter span {
+    transition: none;
+  }
+}
+
+.zones,
+.methods,
+.feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.zones li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.zone-code {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-weight: 700;
+}
+.zone-body {
+  flex: 1;
+  min-width: 0;
+}
+.zone-line {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 0.9rem;
+}
+
+.feed {
+  gap: var(--space-2);
+  max-height: 320px;
+  overflow-y: auto;
+}
+.feed li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.feed li time {
+  margin-left: auto;
+}
+.feed li.empty {
+  border: 0;
+  justify-content: center;
+}

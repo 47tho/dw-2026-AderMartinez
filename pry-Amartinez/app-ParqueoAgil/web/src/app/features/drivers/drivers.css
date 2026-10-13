@@ -1,0 +1,30 @@
+.row-skeleton {
+  height: 2.5rem;
+  margin-bottom: var(--space-2);
+}
+.table-wrap:focus-visible {
+  outline-offset: -2px;
+}
+.email {
+  overflow-wrap: anywhere;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.vehicles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.pay {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.empty p + p {
+  margin-top: var(--space-2);
+}

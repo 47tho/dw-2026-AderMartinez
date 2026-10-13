@@ -1,0 +1,84 @@
+<header class="page-head">
+  <div>
+    <h1>Tickets</h1>
+    <p>Entradas y salidas del parqueadero. La lista se actualiza sola.</p>
+  </div>
+</header>
+
+<div class="card filters" role="search" aria-label="Filtros de tickets">
+  <div class="form-row">
+    <div class="field">
+      <label for="f-status">Estado</label>
+      <select id="f-status" class="input" [ngModel]="status()" (ngModelChange)="setStatus($event)">
+        <option value="open">Abiertos</option>
+        <option value="closed">Cerrados</option>
+        <option value="all">Todos</option>
+      </select>
+    </div>
+    <div class="field plate-field">
+      <label for="f-plate">Placa</label>
+      <input
+        id="f-plate"
+        class="input plate-input"
+        type="search"
+        maxlength="10"
+        autocomplete="off"
+        placeholder="Ej. ABC123"
+        [value]="plate()"
+        (input)="onPlate($event)"
+      />
+    </div>
+    <div class="field">
+      <label for="f-zone">Zona</label>
+      <select id="f-zone" class="input" [ngModel]="zoneId()" (ngModelChange)="setZone($event)">
+        <option [ngValue]="null">Todas las zonas</option>
+        @for (zone of zones(); track zone.id) {
+          <option [ngValue]="zone.id">{{ zone.name }}</option>
+        }
+      </select>
+    </div>
+    <button type="button" class="btn ghost" (click)="clearFilters()" [disabled]="!isFiltered()">Limpiar filtros</button>
+  </div>
+</div>
+
+@if (chargeError()) {
+  <p class="alert error charge-error" role="alert">{{ chargeError() }}</p>
+}
+
+<section #results class="card results" tabindex="-1" aria-labelledby="results-title" [attr.aria-busy]="loading()">
+  <header>
+    <h2 id="results-title">Resultados</h2>
+    <span class="subtle num" role="status">{{ summary() }}</span>
+  </header>
+
+  @if (loading()) {
+    <p class="sr-only" role="status">Cargando tickets…</p>
+    <div class="sk-list" aria-hidden="true">
+      @for (n of skeletons; track n) {
+        <div class="skeleton sk-row"></div>
+      }
+    </div>
+  } @else if (error(); as message) {
+    <div class="alert error" role="alert">
+      <span>{{ message }}</span>
+      <button type="button" class="btn sm retry" (click)="load()">Reintentar</button>
+    </div>
+  } @else if (items().length === 0) {
+    <p class="empty">{{ emptyText() }}</p>
+  } @else {
+    <app-tickets-table
+      [tickets]="items()"
+      [zones]="zones()"
+      [canCharge]="canCharge()"
+      [chargingId]="chargingId()"
+      (charge)="charge($event)"
+    />
+    <nav class="pager" aria-label="Paginación de tickets">
+      <button type="button" class="btn sm" (click)="go(-1)" [disabled]="page() <= 1">Anterior</button>
+      <span class="num">Página {{ page() }} de {{ meta().totalPages }}</span>
+      <button type="button" class="btn sm" (click)="go(1)" [disabled]="page() >= meta().totalPages">Siguiente</button>
+    </nav>
+  }
+</section>
+
+<app-charge-dialog (closed)="onDialogClosed()" />

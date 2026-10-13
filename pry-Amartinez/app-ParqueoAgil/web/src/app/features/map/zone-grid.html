@@ -1,0 +1,45 @@
+@let v = view();
+<section class="card zone" [style.--zone]="v.zone.color" [attr.aria-labelledby]="'zone-title-' + v.zone.id">
+  <header>
+    <span class="letter" aria-hidden="true">{{ v.zone.code ?? '·' }}</span>
+    <h2 [id]="'zone-title-' + v.zone.id">{{ v.zone.name }}</h2>
+    <span class="count num"><strong>{{ v.free }}</strong> libres de {{ v.spots.length }}</span>
+  </header>
+
+  @if (v.spots.length === 0) {
+    <p class="empty">Esta zona aún no tiene espacios.</p>
+  } @else {
+    @let l = layout();
+    <div class="spots" [style.--columns]="l.columns">
+      @for (spot of v.spots; track spot.id) {
+        @let occupant = occupants().get(spot.id);
+        <button
+          type="button"
+          class="spot"
+          [id]="'spot-' + spot.id"
+          [attr.data-status]="spot.status"
+          [class.selected]="spot.id === selectedId()"
+          [class.found]="highlighted().has(spot.id)"
+          [style.grid-row]="spot.row - l.minRow + 1"
+          [style.grid-column]="spot.column - l.minCol + 1"
+          [attr.aria-pressed]="spot.id === selectedId()"
+          [attr.aria-label]="label(spot)"
+          (click)="pick.emit(spot.id)"
+        >
+          <span class="code">{{ spot.code }}</span>
+          @switch (spot.status) {
+            @case ('free') {
+              <span class="state">Libre</span>
+            }
+            @case ('blocked') {
+              <span class="state">Bloq.</span>
+            }
+            @default {
+              <span class="state mono">{{ occupant?.plate ?? 'Ocup.' }}</span>
+            }
+          }
+        </button>
+      }
+    </div>
+  }
+</section>

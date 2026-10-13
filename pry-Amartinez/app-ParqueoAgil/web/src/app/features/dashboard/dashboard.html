@@ -1,0 +1,118 @@
+<header class="page-head">
+  <div>
+    <h1>Tablero</h1>
+    <p>Ocupación y movimiento de hoy. Se actualiza solo con cada entrada y salida.</p>
+  </div>
+  <button type="button" class="btn sm" (click)="load()">Actualizar</button>
+</header>
+
+@if (error() && !summary()) {
+  <div class="alert error" role="alert">
+    <span>{{ error() }}</span>
+    <button type="button" class="btn sm" (click)="load()">Reintentar</button>
+  </div>
+}
+
+@if (summary(); as s) {
+  <section class="grid kpis" aria-label="Indicadores">
+    <article class="card kpi">
+      <h2>Ocupación</h2>
+      <p class="value num">{{ occupancyPct() }}<small>%</small></p>
+      <div class="meter" role="meter" aria-label="Ocupación" [attr.aria-valuenow]="occupancyPct()" aria-valuemin="0" aria-valuemax="100">
+        <span [style.width.%]="occupancyPct()"></span>
+      </div>
+      <p class="subtle num">{{ s.occupancy.occupied }} de {{ s.occupancy.capacity }} espacios</p>
+    </article>
+    <article class="card kpi">
+      <h2>Libres ahora</h2>
+      <p class="value num ok">{{ s.occupancy.free }}</p>
+      <p class="subtle num">{{ s.occupancy.blocked }} bloqueados</p>
+    </article>
+    <article class="card kpi">
+      <h2>Ingresos de hoy</h2>
+      <p class="value num">{{ s.today.revenue | cop }}</p>
+      <p class="subtle num">{{ s.today.exits }} salidas cobradas</p>
+    </article>
+    <article class="card kpi">
+      <h2>Entradas de hoy</h2>
+      <p class="value num">{{ s.today.entries }}</p>
+      <p class="subtle num">Estadía promedio {{ s.today.avgMinutes | duration }}</p>
+    </article>
+  </section>
+
+  <div class="grid two section">
+    <section class="card" aria-labelledby="zones-title">
+      <header><h2 id="zones-title">Ocupación por zona</h2></header>
+      <ul class="zones">
+        @for (z of s.occupancy.zones; track z.id) {
+          <li>
+            <span class="zone-code" [style.background]="z.color ?? 'var(--surface-3)'">{{ z.code ?? '—' }}</span>
+            <div class="zone-body">
+              <div class="zone-line">
+                <span>{{ z.name }}</span>
+                <span class="num muted">{{ z.occupied }}/{{ z.capacity }}</span>
+              </div>
+              <div class="meter thin" [class.full]="zonePct(z.occupied, z.capacity) >= 90">
+                <span [style.width.%]="zonePct(z.occupied, z.capacity)"></span>
+              </div>
+            </div>
+          </li>
+        } @empty {
+          <li class="empty">No hay zonas activas.</li>
+        }
+      </ul>
+    </section>
+
+    <section class="card" aria-labelledby="live-title">
+      <header>
+        <h2 id="live-title">Actividad en vivo</h2>
+        <span class="badge" [class.ok]="feed().length > 0">{{ feed().length > 0 ? 'Recibiendo' : 'Esperando' }}</span>
+      </header>
+      <ol class="feed" aria-live="polite">
+        @for (item of feed(); track item.id) {
+          <li>
+            <span class="badge" [class.ok]="item.kind === 'in'" [class.info]="item.kind === 'out'" [class.warn]="item.kind === 'quote'">
+              {{ item.kind === 'in' ? 'Entrada' : item.kind === 'out' ? 'Salida' : 'Por cobrar' }}
+            </span>
+            <span class="plate">{{ item.ticket.plate ?? '—' }}</span>
+            <span class="muted">{{ item.ticket.spotCode ?? '' }}</span>
+            @if (item.kind === 'out') {
+              <span class="num">{{ item.ticket.total | cop }}</span>
+            }
+            <time class="subtle num">{{ item.at.toISOString() | hora }}</time>
+          </li>
+        } @empty {
+          <li class="empty">Las entradas y salidas aparecerán aquí al instante.</li>
+        }
+      </ol>
+    </section>
+  </div>
+
+  <div class="grid two section">
+    <section class="card" aria-labelledby="hours-title">
+      <header><h2 id="hours-title">Entradas por hora</h2></header>
+      <app-hourly-chart [values]="s.entriesByHour" />
+    </section>
+
+    <section class="card" aria-labelledby="methods-title">
+      <header><h2 id="methods-title">Ingresos por método de pago</h2></header>
+      <ul class="methods">
+        @for (m of methods(); track m.code) {
+          <li>
+            <div class="zone-line">
+              <span>{{ m.label }}</span>
+              <span class="num">{{ m.amount | cop }} <span class="subtle">({{ m.pct }}%)</span></span>
+            </div>
+            <div class="meter thin"><span [style.width.%]="m.pct"></span></div>
+          </li>
+        }
+      </ul>
+    </section>
+  </div>
+} @else if (!error()) {
+  <div class="grid kpis" aria-busy="true" aria-label="Cargando tablero">
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="card"><div class="skeleton" style="height: 5.5rem"></div></div>
+    }
+  </div>
+}

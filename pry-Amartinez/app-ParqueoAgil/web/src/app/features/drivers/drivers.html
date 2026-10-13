@@ -1,0 +1,98 @@
+<header class="page-head">
+  <div>
+    <h1>Conductores</h1>
+    <p>Personas registradas en la app móvil, sus vehículos y si están dentro del parqueadero.</p>
+  </div>
+  <button type="button" class="btn sm" (click)="load(meta()?.page ?? 1)" [disabled]="busy()">Actualizar</button>
+</header>
+
+@if (error()) {
+  <div class="alert error" role="alert">
+    <span>{{ error() }}</span>
+    <button type="button" class="btn sm" (click)="load(meta()?.page ?? 1)">Reintentar</button>
+  </div>
+}
+
+@if (loading()) {
+  <div class="card" aria-busy="true" aria-label="Cargando conductores">
+    @for (i of [1, 2, 3, 4, 5]; track i) {
+      <div class="skeleton row-skeleton"></div>
+    }
+  </div>
+} @else if (result(); as r) {
+  <section class="card" aria-labelledby="drivers-title" [attr.aria-busy]="busy()">
+    <header>
+      <h2 id="drivers-title">Conductores registrados</h2>
+      <span class="subtle num">{{ r.meta.total }} en total</span>
+    </header>
+
+    @if (r.items.length === 0) {
+      <div class="empty">
+        <p><strong>Todavía no hay conductores.</strong></p>
+        <p>Los conductores se registran solos desde la app móvil de ParqueoÁgil; aparecerán aquí en cuanto creen su cuenta.</p>
+      </div>
+    } @else {
+      <div class="table-wrap" role="region" aria-label="Tabla de conductores" tabindex="0">
+        <table class="table">
+          <caption class="sr-only">Conductores con sus vehículos, método de pago y estado</caption>
+          <thead>
+            <tr>
+              <th scope="col">Nombre</th>
+              <th scope="col">Correo</th>
+              <th scope="col">Celular</th>
+              <th scope="col">Documento</th>
+              <th scope="col">Vehículos</th>
+              <th scope="col">Pago preferido</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Registro</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of r.items; track d.id) {
+              <tr>
+                <td><strong>{{ d.name }}</strong></td>
+                <td class="email">{{ d.email ?? '—' }}</td>
+                <td class="num nowrap">{{ d.phone ?? '—' }}</td>
+                <td class="num nowrap"><span class="subtle">{{ d.docType }}</span> {{ d.docNumber }}</td>
+                <td>
+                  <ul class="vehicles">
+                    @for (v of d.vehicles; track v.id) {
+                      <li><span class="plate">{{ v.plate }}</span> <span class="subtle">{{ kindLabels[v.kind] }}</span></li>
+                    } @empty {
+                      <li class="subtle">Sin vehículos</li>
+                    }
+                  </ul>
+                </td>
+                <td>
+                  <span class="pay">
+                    {{ paymentLabels[d.paymentMethod] }}
+                    @if (d.hasCard) {
+                      <span class="badge info">Tarjeta guardada</span>
+                    }
+                  </span>
+                </td>
+                <td class="nowrap">
+                  @if (d.activeTickets > 0) {
+                    <span class="badge ok">Dentro</span>
+                    @if (d.activeTickets > 1) {
+                      <span class="subtle">{{ d.activeTickets }} vehículos</span>
+                    }
+                  } @else {
+                    <span class="badge">Fuera</span>
+                  }
+                </td>
+                <td class="num nowrap"><time [attr.datetime]="d.createdAt">{{ d.createdAt | fechaHora }}</time></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <nav class="pager" aria-label="Paginación de conductores">
+        <span class="num">Página {{ r.meta.page }} de {{ r.meta.totalPages || 1 }}</span>
+        <button type="button" class="btn sm" (click)="load(r.meta.page - 1)" [disabled]="busy() || r.meta.page <= 1">Anterior</button>
+        <button type="button" class="btn sm" (click)="load(r.meta.page + 1)" [disabled]="busy() || r.meta.page >= r.meta.totalPages">Siguiente</button>
+      </nav>
+    }
+  </section>
+}

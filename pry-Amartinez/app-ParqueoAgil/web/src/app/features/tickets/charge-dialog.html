@@ -1,0 +1,48 @@
+<dialog #dlg [attr.aria-label]="receipt() ? 'Recibo de pago' : 'Cobrar salida'" (close)="onClosed()">
+  @if (exit(); as e) {
+    @if (receipt(); as r) {
+      <section class="receipt">
+        <header>
+          <h2>Pago registrado</h2>
+          <span class="plate">{{ e.vehicle.plate }}</span>
+        </header>
+        <p class="alert ok" role="status">La salida quedó cobrada y el espacio se liberó.</p>
+        <dl>
+          <div>
+            <dt>Referencia</dt>
+            <dd class="num">{{ r.paymentRef ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt>Método</dt>
+            <dd>{{ r.paymentMethod ? labels[r.paymentMethod] : '—' }}</dd>
+          </div>
+          @if (r.paymentMethod === 'cash') {
+            <div>
+              <dt>Efectivo recibido</dt>
+              <dd class="num">{{ r.amountReceived | cop }}</dd>
+            </div>
+            <div>
+              <dt>Cambio</dt>
+              <dd class="num">{{ r.change | cop }}</dd>
+            </div>
+          }
+          @if (r.authorization) {
+            <div>
+              <dt>Autorización</dt>
+              <dd class="num">{{ r.authorization }}</dd>
+            </div>
+          }
+          <div class="total">
+            <dt>Total</dt>
+            <dd class="num">{{ r.total | cop }}</dd>
+          </div>
+        </dl>
+        <div class="actions">
+          <button #closeBtn type="button" class="btn primary" (click)="close()">Cerrar</button>
+        </div>
+      </section>
+    } @else {
+      <app-payment-panel [exit]="e" (paid)="receipt.set($event)" (cancelled)="close()" />
+    }
+  }
+</dialog>

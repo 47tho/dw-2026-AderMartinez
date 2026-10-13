@@ -1,0 +1,77 @@
+<div class="table-wrap" tabindex="0" role="region" aria-label="Tabla de tickets (se desplaza horizontalmente)">
+  <table class="table">
+    <caption class="sr-only">Tickets del parqueadero</caption>
+    <thead>
+      <tr>
+        <th scope="col">N.º</th>
+        <th scope="col">Placa</th>
+        <th scope="col">Zona / espacio</th>
+        <th scope="col">Entrada</th>
+        <th scope="col">Salida</th>
+        <th scope="col">Tiempo</th>
+        <th scope="col">Canal</th>
+        <th scope="col">Método de pago</th>
+        <th scope="col" class="right">Total</th>
+        <th scope="col">Estado</th>
+        @if (canCharge()) {
+          <th scope="col"><span class="sr-only">Acciones</span></th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (t of tickets(); track t.id) {
+        <tr>
+          <td class="num">{{ t.id }}</td>
+          <td>
+            @if (t.plate) {
+              <span class="plate">{{ t.plate }}</span>
+            } @else {
+              <span class="subtle">Sin placa</span>
+            }
+          </td>
+          <td>
+            <strong>{{ t.spotCode ?? '—' }}</strong>
+            <span class="subtle zone">{{ zoneNames().get(t.parkingZoneId) }}</span>
+          </td>
+          <td class="num nowrap">{{ t.entryAt | fechaHora }}</td>
+          <td class="num nowrap">{{ t.exitAt | fechaHora }}</td>
+          <td class="num nowrap">{{ minutes(t) | duration }}</td>
+          <td>
+            <span class="badge" [class.info]="t.channel === 'qr'">{{ channelLabels[t.channel] }}</span>
+          </td>
+          <td>{{ t.paymentMethod ? paymentLabels[t.paymentMethod] : '—' }}</td>
+          <td class="num right nowrap">
+            @if (isClosed(t) || t.total > 0) {
+              {{ t.total | cop }}
+            } @else {
+              —
+            }
+          </td>
+          <td>
+            @if (isClosed(t)) {
+              <span class="badge">Cerrado</span>
+            } @else {
+              <span class="badge ok">Abierto</span>
+            }
+          </td>
+          @if (canCharge()) {
+            <td class="right">
+              @if (!isClosed(t) && t.plate) {
+                <button
+                  #btn
+                  type="button"
+                  class="btn sm primary"
+                  [attr.aria-label]="'Cobrar salida de la placa ' + t.plate"
+                  [disabled]="chargingId() !== null"
+                  (click)="charge.emit({ ticket: t, opener: btn })"
+                >
+                  {{ chargingId() === t.id ? 'Cotizando…' : 'Cobrar salida' }}
+                </button>
+              }
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

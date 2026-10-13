@@ -1,0 +1,34 @@
+.filters {
+  margin-bottom: var(--space-4);
+}
+.filters .field {
+  min-width: 10rem;
+}
+.filters .plate-field {
+  flex: 1 1 12rem;
+}
+.charge-error {
+  margin-bottom: var(--space-4);
+}
+.results:focus {
+  outline: none;
+}
+.results:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.sk-list {
+  display: grid;
+  gap: var(--space-2);
+}
+.sk-row {
+  height: 2.25rem;
+}
+.retry {
+  margin-left: auto;
+}
+@media (max-width: 600px) {
+  .filters .field {
+    flex: 1 1 100%;
+  }
+}

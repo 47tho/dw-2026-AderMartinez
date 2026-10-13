@@ -1,0 +1,68 @@
+<section class="card" aria-labelledby="staff-form-title">
+  <header><h2 id="staff-form-title">Nuevo integrante</h2></header>
+  <p class="muted intro">Crea el usuario y le asigna un rol. El usuario podrá entrar al panel con el correo o el nombre de usuario.</p>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="fields">
+    @let userErr = err('username');
+    <div class="field">
+      <label for="staff-username">Usuario</label>
+      <input id="staff-username" class="input" formControlName="username" maxlength="80" autocomplete="off" autocapitalize="none" spellcheck="false"
+             [attr.aria-invalid]="userErr ? true : null" [attr.aria-describedby]="userErr ? 'staff-username-hint staff-username-err' : 'staff-username-hint'" />
+      <p class="subtle" id="staff-username-hint">Mínimo 3 caracteres; se guarda en minúsculas.</p>
+      @if (userErr) { <p class="form-error" id="staff-username-err">{{ userErr }}</p> }
+    </div>
+
+    @let emailErr = err('email');
+    <div class="field">
+      <label for="staff-email">Correo</label>
+      <input id="staff-email" class="input" type="email" formControlName="email" maxlength="150" autocomplete="off" spellcheck="false"
+             [attr.aria-invalid]="emailErr ? true : null" [attr.aria-describedby]="emailErr ? 'staff-email-err' : null" />
+      @if (emailErr) { <p class="form-error" id="staff-email-err">{{ emailErr }}</p> }
+    </div>
+
+    @let passErr = err('password');
+    <div class="field">
+      <label for="staff-password">Contraseña</label>
+      <input id="staff-password" class="input" type="password" formControlName="password" maxlength="100" autocomplete="new-password"
+             [attr.aria-invalid]="passErr ? true : null" [attr.aria-describedby]="passErr ? 'staff-password-hint staff-password-err' : 'staff-password-hint'" />
+      <p class="subtle" id="staff-password-hint">Mínimo 8 caracteres.</p>
+      @if (passErr) { <p class="form-error" id="staff-password-err">{{ passErr }}</p> }
+    </div>
+
+    @let roleErr = err('roleId');
+    <div class="field">
+      <label for="staff-role">Rol</label>
+      <select id="staff-role" class="input" formControlName="roleId"
+              [attr.aria-invalid]="roleErr ? true : null" [attr.aria-describedby]="roleErr ? 'staff-role-err' : null">
+        <option [ngValue]="null" disabled>Elige un rol…</option>
+        @for (r of assignable(); track r.id) {
+          <option [ngValue]="r.id">{{ r.name }}</option>
+        }
+      </select>
+      @if (roleErr) { <p class="form-error" id="staff-role-err">{{ roleErr }}</p> }
+      @if (assignable().length === 0) { <p class="subtle">No se encontraron los roles ADMIN y SELLER en el sistema.</p> }
+    </div>
+
+    <div class="wide actions">
+      <div aria-live="polite">
+        @if (success(); as message) {
+          <p class="alert ok">{{ message }}</p>
+        }
+      </div>
+      @if (error(); as message) {
+        <p class="alert error" role="alert">{{ message }}</p>
+      }
+      @if (orphan(); as o) {
+        <div class="alert warn" role="alert">
+          <div>
+            <p><strong>El usuario «{{ o.user.username }}» quedó creado, pero sin rol.</strong></p>
+            <p>{{ o.reason }}</p>
+            <p>No podrá hacer nada en el panel hasta que se le asigne un rol.</p>
+          </div>
+          <button type="button" class="btn sm" (click)="retryAssignment()" [disabled]="saving() || !form.controls.roleId.value">Reintentar asignación</button>
+        </div>
+      }
+      <button type="submit" class="btn primary" [disabled]="saving()">{{ saving() ? 'Creando…' : 'Crear integrante' }}</button>
+    </div>
+  </form>
+</section>

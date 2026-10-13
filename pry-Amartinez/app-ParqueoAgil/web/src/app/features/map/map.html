@@ -1,0 +1,86 @@
+@let totals = store.totals();
+
+<header class="page-head">
+  <div>
+    <h1>Mapa de espacios</h1>
+    <p class="num">{{ totals.free }} libres · {{ totals.occupied }} ocupados · {{ totals.blocked }} bloqueados</p>
+  </div>
+  <div class="field search">
+    <label for="plate-search">Buscar placa</label>
+    <input
+      id="plate-search"
+      class="input plate-input"
+      type="search"
+      maxlength="10"
+      autocomplete="off"
+      placeholder="Ej. ABC123"
+      [value]="store.query()"
+      (input)="onSearch($event)"
+    />
+  </div>
+</header>
+<p class="search-status" role="status">{{ store.searchStatus() }}</p>
+
+@if (store.loading()) {
+  <p class="sr-only" role="status">Cargando el plano…</p>
+  <div class="zones" aria-hidden="true">
+    @for (n of skeletons; track n) {
+      <div class="skeleton sk-card"></div>
+    }
+  </div>
+} @else if (store.error(); as message) {
+  <div class="alert error" role="alert">
+    <span>{{ message }}</span>
+    <button type="button" class="btn sm retry" (click)="store.load()">Reintentar</button>
+  </div>
+} @else if (store.floors().length === 0) {
+  <p class="empty card">Aún no hay zonas con espacios. Créalas en «Zonas y tarifas» y aparecerán aquí.</p>
+} @else {
+  <div class="toolbar">
+    <div class="floors" role="group" aria-label="Piso">
+      @for (f of store.floors(); track f.floor) {
+        <button
+          type="button"
+          class="btn"
+          [attr.aria-pressed]="f.floor === store.activeFloor()"
+          (click)="store.floor.set(f.floor)"
+        >
+          Piso {{ f.floor }}
+          <span class="subtle num">{{ f.free }} libres</span>
+        </button>
+      }
+    </div>
+    <ul class="legend" aria-label="Leyenda">
+      <li><span class="swatch" data-status="free"></span>Libre</li>
+      <li><span class="swatch" data-status="occupied"></span>Ocupado (placa)</li>
+      <li><span class="swatch" data-status="blocked"></span>Bloqueado</li>
+    </ul>
+  </div>
+
+  <div class="layout">
+    <div class="zones">
+      @for (view of store.views(); track view.zone.id) {
+        <app-zone-grid
+          [view]="view"
+          [occupants]="store.occupants()"
+          [selectedId]="store.selectedId()"
+          [highlighted]="store.highlighted()"
+          (pick)="store.select($event)"
+        />
+      }
+    </div>
+    <aside class="side">
+      @let sel = store.selected();
+      <app-spot-panel
+        [spot]="sel?.spot ?? null"
+        [zone]="sel?.zone ?? null"
+        [occupant]="sel?.occupant ?? null"
+        [canManage]="canManage()"
+        [busy]="store.busy()"
+        [error]="store.actionError()"
+        (toggle)="store.toggleBlocked()"
+        (closed)="store.selectedId.set(null)"
+      />
+    </aside>
+  </div>
+}

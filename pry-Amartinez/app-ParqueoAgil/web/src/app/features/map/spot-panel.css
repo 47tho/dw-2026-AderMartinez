@@ -1,0 +1,40 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.panel > header {
+  margin-bottom: 0;
+}
+dl {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+dl > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+dt {
+  font-size: 0.78rem;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* En pantallas angostas el panel va bajo el plano y solo aparece con un espacio elegido. */
+@media (max-width: 900px) {
+  .panel {
+    border-color: var(--accent);
+  }
+  .panel.idle {
+    display: none;
+  }
+}

@@ -1,0 +1,96 @@
+<section class="card" aria-labelledby="zone-form-title">
+  <header><h2 id="zone-form-title">Nueva zona</h2></header>
+  <p class="muted intro">
+    Al crear la zona, el sistema genera automáticamente sus espacios (A01, A02…) con la letra que elijas, uno por cada cupo de la capacidad.
+  </p>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="fields">
+    @let nameErr = err('name');
+    <div class="field wide">
+      <label for="zone-name">Nombre</label>
+      <input id="zone-name" class="input" formControlName="name" maxlength="150" autocomplete="off" placeholder="Zona A - Piso 1"
+             [attr.aria-invalid]="nameErr ? true : null" [attr.aria-describedby]="nameErr ? 'zone-name-err' : null" />
+      @if (nameErr) { <p class="form-error" id="zone-name-err">{{ nameErr }}</p> }
+    </div>
+
+    @let codeErr = err('code');
+    <div class="field">
+      <label for="zone-code">Letra</label>
+      <input id="zone-code" class="input plate-input" formControlName="code" maxlength="4" autocomplete="off" placeholder="A"
+             (blur)="normalizeCode()"
+             [attr.aria-invalid]="codeErr ? true : null" [attr.aria-describedby]="codeErr ? 'zone-code-hint zone-code-err' : 'zone-code-hint'" />
+      <p class="subtle" id="zone-code-hint">1 a 4 caracteres, A–Z o 0–9, empezando por letra.</p>
+      @if (codeErr) { <p class="form-error" id="zone-code-err">{{ codeErr }}</p> }
+    </div>
+
+    @let typeErr = err('vehicleTypeId');
+    <div class="field">
+      <label for="zone-type">Tipo de vehículo</label>
+      <select id="zone-type" class="input" formControlName="vehicleTypeId"
+              [attr.aria-invalid]="typeErr ? true : null" [attr.aria-describedby]="typeErr ? 'zone-type-err' : null">
+        <option [ngValue]="null" disabled>Elige un tipo…</option>
+        @for (t of activeTypes(); track t.id) {
+          <option [ngValue]="t.id">{{ t.name }}</option>
+        }
+      </select>
+      @if (typeErr) { <p class="form-error" id="zone-type-err">{{ typeErr }}</p> }
+      @if (activeTypes().length === 0) { <p class="subtle">No hay tipos activos: crea uno primero.</p> }
+    </div>
+
+    @let capErr = err('capacity');
+    <div class="field">
+      <label for="zone-capacity">Capacidad</label>
+      <input id="zone-capacity" class="input num" type="number" inputmode="numeric" min="1" max="500" step="1" formControlName="capacity"
+             [attr.aria-invalid]="capErr ? true : null" [attr.aria-describedby]="capErr ? 'zone-capacity-hint zone-capacity-err' : 'zone-capacity-hint'" />
+      <p class="subtle" id="zone-capacity-hint">De 1 a 500 espacios.</p>
+      @if (capErr) { <p class="form-error" id="zone-capacity-err">{{ capErr }}</p> }
+    </div>
+
+    @let rateErr = err('hourlyRate');
+    <div class="field">
+      <label for="zone-rate">Tarifa por hora (COP)</label>
+      <input id="zone-rate" class="input num" type="number" inputmode="numeric" min="1" step="100" formControlName="hourlyRate" placeholder="3000"
+             [attr.aria-invalid]="rateErr ? true : null" [attr.aria-describedby]="rateErr ? 'zone-rate-hint zone-rate-err' : 'zone-rate-hint'" />
+      <p class="subtle" id="zone-rate-hint">En pesos, sin puntos ni comas.</p>
+      @if (rateErr) { <p class="form-error" id="zone-rate-err">{{ rateErr }}</p> }
+    </div>
+
+    @let floorErr = err('floor');
+    <div class="field">
+      <label for="zone-floor">Piso</label>
+      <input id="zone-floor" class="input num" type="number" inputmode="numeric" min="1" max="20" step="1" formControlName="floor"
+             [attr.aria-invalid]="floorErr ? true : null" [attr.aria-describedby]="floorErr ? 'zone-floor-hint zone-floor-err' : 'zone-floor-hint'" />
+      <p class="subtle" id="zone-floor-hint">De 1 a 20.</p>
+      @if (floorErr) { <p class="form-error" id="zone-floor-err">{{ floorErr }}</p> }
+    </div>
+
+    @let posErr = err('position');
+    <div class="field">
+      <label for="zone-position">Posición en el piso</label>
+      <input id="zone-position" class="input num" type="number" inputmode="numeric" min="0" max="50" step="1" formControlName="position"
+             [attr.aria-invalid]="posErr ? true : null" [attr.aria-describedby]="posErr ? 'zone-position-hint zone-position-err' : 'zone-position-hint'" />
+      <p class="subtle" id="zone-position-hint">De 0 a 50; 0 es la más cercana a la entrada.</p>
+      @if (posErr) { <p class="form-error" id="zone-position-err">{{ posErr }}</p> }
+    </div>
+
+    <div class="field">
+      <label for="zone-color">Color en el mapa</label>
+      <div class="color-pick">
+        <input id="zone-color" class="input color" type="color" formControlName="color" aria-describedby="zone-color-value" />
+        <span class="num muted" id="zone-color-value">{{ form.controls.color.value }}</span>
+      </div>
+    </div>
+
+    <div class="wide actions">
+      <div aria-live="polite">
+        @if (success(); as message) {
+          <p class="alert ok">{{ message }}</p>
+        }
+      </div>
+      @if (error(); as message) {
+        <p class="alert error" role="alert">{{ message }}</p>
+      }
+      <button type="submit" class="btn primary" [disabled]="saving()">{{ saving() ? 'Creando…' : 'Crear zona' }}</button>
+    </div>
+  </form>
+</section>

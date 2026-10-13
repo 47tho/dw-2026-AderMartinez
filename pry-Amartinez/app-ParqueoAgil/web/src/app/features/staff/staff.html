@@ -1,0 +1,74 @@
+<header class="page-head">
+  <div>
+    <h1>Personal</h1>
+    <p>Usuarios del sistema y los roles que definen qué pueden hacer en el panel.</p>
+  </div>
+  <button type="button" class="btn sm" (click)="load()" [disabled]="loading()">Actualizar</button>
+</header>
+
+<section class="card roles-note" aria-labelledby="roles-title">
+  <h2 id="roles-title">Qué hace cada rol</h2>
+  <dl>
+    <div>
+      <dt><span class="badge info">ADMIN</span></dt>
+      <dd>Administración total.</dd>
+    </div>
+    <div>
+      <dt><span class="badge ok">SELLER</span></dt>
+      <dd>Operador de portería: entradas, salidas y cobros.</dd>
+    </div>
+    <div>
+      <dt><span class="badge">DRIVER</span></dt>
+      <dd>Conductor de la app; no usa el panel.</dd>
+    </div>
+  </dl>
+</section>
+
+@if (loading()) {
+  <div class="card block" aria-busy="true" aria-label="Cargando personal">
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="skeleton row-skeleton"></div>
+    }
+  </div>
+} @else if (error()) {
+  <div class="alert error block" role="alert">
+    <span>{{ error() }}</span>
+    <button type="button" class="btn sm" (click)="load()">Reintentar</button>
+  </div>
+} @else {
+  <section class="card block" aria-labelledby="staff-title">
+    <header>
+      <h2 id="staff-title">Usuarios</h2>
+      <label class="toggle">
+        <input type="checkbox" role="switch" [ngModel]="showDrivers()" (ngModelChange)="showDrivers.set($event)" />
+        <span>Mostrar conductores</span>
+        @if (!showDrivers() && driverCount() > 0) {
+          <span class="subtle num">({{ driverCount() }} ocultos)</span>
+        }
+      </label>
+    </header>
+
+    <div aria-live="polite">
+      @if (notice(); as n) {
+        <p class="alert notice" [class.ok]="n.kind === 'ok'" [class.error]="n.kind === 'error'" [attr.role]="n.kind === 'error' ? 'alert' : null">{{ n.text }}</p>
+      }
+    </div>
+
+    @if (visibleRows().length === 0) {
+      <p class="empty">
+        @if (driverCount() > 0) {
+          Solo hay conductores registrados. Activa «Mostrar conductores» para verlos.
+        } @else {
+          Todavía no hay usuarios para mostrar.
+        }
+      </p>
+    } @else {
+      <app-staff-table [rows]="visibleRows()" [canRemove]="canRemove()" [selfId]="selfId()" [removingId]="removingId()"
+                       (removeRole)="removeRole($event)" />
+    }
+  </section>
+
+  @if (canCreate()) {
+    <app-staff-form class="block" [roles]="roles()" (created)="onCreated($event)" />
+  }
+}

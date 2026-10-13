@@ -1,0 +1,91 @@
+<header class="page-head">
+  <div>
+    <h1>Zonas y tarifas</h1>
+    <p>Zonas del parqueadero, sus cupos en vivo y lo que se cobra en cada una.</p>
+  </div>
+  <button type="button" class="btn sm" (click)="load()" [disabled]="loading()">Actualizar</button>
+</header>
+
+@if (loading()) {
+  <div class="card" aria-busy="true" aria-label="Cargando zonas">
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="skeleton row-skeleton"></div>
+    }
+  </div>
+} @else if (error()) {
+  <div class="alert error" role="alert">
+    <span>{{ error() }}</span>
+    <button type="button" class="btn sm" (click)="load()">Reintentar</button>
+  </div>
+} @else {
+  <section class="card" aria-labelledby="zones-title">
+    <header>
+      <h2 id="zones-title">Zonas</h2>
+      <span class="subtle num">{{ zones().length }} en total</span>
+    </header>
+
+    @if (sortedZones().length === 0) {
+      <p class="empty">
+        Todavía no hay zonas.
+        @if (auth.can('POST', '/api/parking-zones')) {
+          Crea la primera con el formulario «Nueva zona» que está más abajo.
+        } @else {
+          Un administrador debe crearlas.
+        }
+      </p>
+    } @else {
+      <div class="table-wrap" role="region" aria-label="Tabla de zonas" tabindex="0">
+        <table class="table">
+          <caption class="sr-only">Zonas con su capacidad, cupos disponibles y tarifas</caption>
+          <thead>
+            <tr>
+              <th scope="col">Zona</th>
+              <th scope="col">Nombre</th>
+              <th scope="col" class="right">Piso</th>
+              <th scope="col">Tipo de vehículo</th>
+              <th scope="col" class="right">Capacidad</th>
+              <th scope="col" class="right">Disponibles</th>
+              <th scope="col" class="right">Tarifa por hora</th>
+              <th scope="col" class="right">Por fracción de 15 min</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (z of sortedZones(); track z.id) {
+              <tr>
+                <td>
+                  <span class="code">
+                    <span class="swatch" [style.background]="z.color ?? 'var(--surface-3)'" [attr.title]="z.color" aria-hidden="true"></span>
+                    <strong>{{ z.code ?? '—' }}</strong>
+                  </span>
+                </td>
+                <td>{{ z.name }}</td>
+                <td class="right num">{{ z.floor }}</td>
+                <td>{{ typeName(z.vehicleTypeId) }}</td>
+                <td class="right num">{{ z.capacity }}</td>
+                <td class="right num">
+                  {{ z.availableSpots }}
+                  @if (z.availableSpots === 0) {
+                    <span class="badge danger">Llena</span>
+                  }
+                </td>
+                <td class="right num">{{ z.hourlyRate | cop }}</td>
+                <td class="right num">{{ fraction(z.hourlyRate) | cop }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="subtle note">
+        Precio por fracción aproximado (tarifa por hora × 15 ÷ 60). Cobro por fracciones de 15 min, aproximado a $100.
+        Cada fracción que empieza se cobra completa.
+      </p>
+    }
+  </section>
+
+  <div class="grid two below">
+    @if (auth.can('POST', '/api/parking-zones')) {
+      <app-zone-form [types]="types()" (created)="onZoneCreated($event)" />
+    }
+    <app-vehicle-types [types]="types()" (created)="onTypeCreated($event)" />
+  </div>
+}
