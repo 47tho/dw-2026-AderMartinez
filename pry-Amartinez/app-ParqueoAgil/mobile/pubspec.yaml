@@ -1,0 +1,23 @@
+name: parqueoagil
+description: "Prototipo movil de gestion de parqueaderos - Trabajo parcial de Desarrollo Movil."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.4.2
+  crypto: ^3.0.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
