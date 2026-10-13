@@ -24,6 +24,10 @@ export class RolesSeeder {
       name: 'SELLER',
       description: 'Operación de ventas: consulta catálogo y registra tickets',
     },
+    {
+      name: 'DRIVER',
+      description: 'Conductor de la app móvil: sus vehículos, su QR y su historial',
+    },
   ] as const;
 
   constructor(

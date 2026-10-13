@@ -19,7 +19,11 @@
  * | Recursos                               | 7 |
  * | Asignaciones usuario-rol               | 5 |
  * | Concesiones rol-recurso                | 5 |
- * | **Total**                              | **58** |
+ * | Integración app + portería (conductor, portería, espacios, reportes, eventos) | 17 |
+ * | **Total**                              | **75** |
+ *
+ * Roles: `ADMIN` recibe todo; `SELLER` (operador de portería) los marcados con
+ * `seller: true`; `DRIVER` (conductor de la app) los marcados con `driver: true`.
  *
  * Nota: las operaciones de sesión (`/api/auth/*`) **no** son recursos RBAC.
  * Son OPEN o JWT: no dependen de la matriz de permisos.
@@ -30,6 +34,8 @@ export interface CatalogResource {
   description: string;
   /** `true` si el rol `SELLER` recibe esta concesión. */
   seller?: boolean;
+  /** `true` si el rol `DRIVER` (conductor de la app) recibe esta concesión. */
+  driver?: boolean;
 }
 
 export const RESOURCE_CATALOG: readonly CatalogResource[] = [
@@ -43,8 +49,8 @@ export const RESOURCE_CATALOG: readonly CatalogResource[] = [
   { method: 'PATCH', path: '/api/clients/:id/deactivate', description: 'Desactivar cliente' },
 
   // ── VehicleTypes (7) ──────────────────────────────────────────
-  { method: 'GET', path: '/api/vehicle-types', description: 'Listar tipos de vehículo', seller: true },
-  { method: 'GET', path: '/api/vehicle-types/:id', description: 'Consultar tipo de vehículo', seller: true },
+  { method: 'GET', path: '/api/vehicle-types', description: 'Listar tipos de vehículo', seller: true, driver: true },
+  { method: 'GET', path: '/api/vehicle-types/:id', description: 'Consultar tipo de vehículo', seller: true, driver: true },
   { method: 'POST', path: '/api/vehicle-types', description: 'Crear tipo de vehículo' },
   { method: 'PUT', path: '/api/vehicle-types/:id', description: 'Reemplazar tipo de vehículo' },
   { method: 'PATCH', path: '/api/vehicle-types/:id', description: 'Modificar tipo de vehículo' },
@@ -52,8 +58,8 @@ export const RESOURCE_CATALOG: readonly CatalogResource[] = [
   { method: 'PATCH', path: '/api/vehicle-types/:id/deactivate', description: 'Desactivar tipo de vehículo' },
 
   // ── ParkingZones (7) ──────────────────────────────────────────
-  { method: 'GET', path: '/api/parking-zones', description: 'Listar zonas', seller: true },
-  { method: 'GET', path: '/api/parking-zones/:id', description: 'Consultar zona', seller: true },
+  { method: 'GET', path: '/api/parking-zones', description: 'Listar zonas', seller: true, driver: true },
+  { method: 'GET', path: '/api/parking-zones/:id', description: 'Consultar zona', seller: true, driver: true },
   { method: 'POST', path: '/api/parking-zones', description: 'Crear zona' },
   { method: 'PUT', path: '/api/parking-zones/:id', description: 'Reemplazar zona' },
   { method: 'PATCH', path: '/api/parking-zones/:id', description: 'Modificar zona' },
@@ -65,6 +71,31 @@ export const RESOURCE_CATALOG: readonly CatalogResource[] = [
   { method: 'GET', path: '/api/tickets/:id', description: 'Consultar ticket', seller: true },
   { method: 'POST', path: '/api/tickets', description: 'Abrir ticket (entrada)', seller: true },
   { method: 'POST', path: '/api/tickets/:id/close', description: 'Cerrar ticket (salida)', seller: true },
+
+  // ── Espacios (2) ──────────────────────────────────────────────
+  { method: 'GET', path: '/api/parking-spots', description: 'Plano de espacios (sin placas)', seller: true, driver: true },
+  { method: 'PATCH', path: '/api/parking-spots/:id', description: 'Bloquear o liberar un espacio' },
+
+  // ── Portería y cobro (4) ──────────────────────────────────────
+  { method: 'POST', path: '/api/gate/scan', description: 'Leer QR en portería (entrada o salida)', seller: true },
+  { method: 'POST', path: '/api/gate/manual-entry', description: 'Entrada manual por placa', seller: true },
+  { method: 'POST', path: '/api/gate/manual-exit', description: 'Salida manual por placa', seller: true },
+  { method: 'POST', path: '/api/tickets/:id/pay', description: 'Cobrar la salida', seller: true },
+
+  // ── Conductores, reportes y eventos (3) ───────────────────────
+  { method: 'GET', path: '/api/drivers', description: 'Listar conductores', seller: true },
+  { method: 'GET', path: '/api/reports/summary', description: 'Resumen de ocupación e ingresos', seller: true },
+  { method: 'GET', path: '/api/events', description: 'Eventos en tiempo real (SSE)', seller: true, driver: true },
+
+  // ── App del conductor (8) ─────────────────────────────────────
+  { method: 'GET', path: '/api/me', description: 'Mi perfil de conductor', driver: true },
+  { method: 'PATCH', path: '/api/me', description: 'Actualizar mis datos', driver: true },
+  { method: 'POST', path: '/api/me/vehicles', description: 'Registrar mi vehículo', driver: true },
+  { method: 'PATCH', path: '/api/me/vehicles/:id', description: 'Modificar mi vehículo', driver: true },
+  { method: 'PUT', path: '/api/me/preferences', description: 'Mis preferencias de zona, espacio y pago', driver: true },
+  { method: 'PUT', path: '/api/me/card', description: 'Guardar tarjeta (token) para cobro automático', driver: true },
+  { method: 'DELETE', path: '/api/me/card', description: 'Quitar tarjeta guardada', driver: true },
+  { method: 'GET', path: '/api/me/tickets', description: 'Mi historial de parqueo', driver: true },
 
   // ── Usuarios (9) ──────────────────────────────────────────────
   { method: 'GET', path: '/api/usuarios', description: 'Listar usuarios' },
@@ -113,4 +144,9 @@ export const RESOURCE_CATALOG: readonly CatalogResource[] = [
 /** Recursos que recibe el rol `SELLER`. Derivado del catálogo, no duplicado. */
 export const SELLER_RESOURCES: readonly CatalogResource[] = RESOURCE_CATALOG.filter(
   (resource) => resource.seller === true,
+);
+
+/** Recursos que recibe el rol `DRIVER` (conductor de la app móvil). */
+export const DRIVER_RESOURCES: readonly CatalogResource[] = RESOURCE_CATALOG.filter(
+  (resource) => resource.driver === true,
 );

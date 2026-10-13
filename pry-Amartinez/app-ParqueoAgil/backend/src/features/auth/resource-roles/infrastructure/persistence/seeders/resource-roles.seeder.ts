@@ -5,6 +5,7 @@ import { RESOURCE_REPOSITORY } from '../../../../resources/domain/interfaces/res
 import type { IResourceRepository } from '../../../../resources/domain/interfaces/resource.repository.js';
 import { ResourceRolesService } from '../../../application/use-cases/resource-roles.service.js';
 import {
+  DRIVER_RESOURCES,
   RESOURCE_CATALOG,
   SELLER_RESOURCES,
 } from '../../../../resources/infrastructure/persistence/resource-catalog.js';
@@ -78,6 +79,21 @@ export class ResourceRolesSeeder {
       );
     } else {
       this.logger.warn('Seeder resource-roles: rol SELLER no encontrado, se omite');
+    }
+
+    // 4) DRIVER → solo los recursos marcados con driver: true.
+    const driver = await this.rolesRepository.findByName('DRIVER');
+    if (driver) {
+      const result = await this.service.reconcileRole(
+        driver.id,
+        idsFor(DRIVER_RESOURCES),
+      );
+      this.logger.log(
+        `Seeder resource-roles: DRIVER → ${result.total_active} recursos ` +
+          `(${result.activated} altas, ${result.deactivated} bajas)`,
+      );
+    } else {
+      this.logger.warn('Seeder resource-roles: rol DRIVER no encontrado, se omite');
     }
   }
 }
