@@ -10,7 +10,10 @@ import '../services/parking_service.dart';
 class ProfileScreen extends StatefulWidget {
   final ParkingService service;
 
-  const ProfileScreen({super.key, required this.service});
+  /// Cerrar sesion (modo conectado) o salir del modo demo.
+  final VoidCallback? onSignOut;
+
+  const ProfileScreen({super.key, required this.service, this.onSignOut});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -101,6 +104,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'El QR de cada vehiculo esta en "Mi QR": va firmado y cambia cada 30 segundos.',
           style: TextStyle(color: Colors.white38, fontSize: 12),
         ),
+        if (widget.onSignOut case final signOut?) ...[
+          const SizedBox(height: 24),
+          OutlinedButton.icon(
+            onPressed: signOut,
+            icon: const Icon(Icons.logout),
+            label: Text(_service.isDemo ? 'Salir del modo demo' : 'Cerrar sesion'),
+            style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent),
+          ),
+        ],
       ],
     );
   }
@@ -287,12 +299,13 @@ class _VehicleDialogState extends State<_VehicleDialog> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final vehicle = widget.vehicle;
-    final error = vehicle == null
+    final error = await (vehicle == null
         ? widget.service.addVehicle(plate: _plate.text, type: _type, description: _description.text)
-        : widget.service.updateVehicle(vehicle.copyWith(plate: _plate.text, type: _type, description: _description.text));
+        : widget.service.updateVehicle(vehicle.copyWith(plate: _plate.text, type: _type, description: _description.text)));
+    if (!mounted) return;
     if (error != null) {
       setState(() => _error = error);
       return;

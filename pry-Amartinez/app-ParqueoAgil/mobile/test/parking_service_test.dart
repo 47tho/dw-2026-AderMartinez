@@ -124,24 +124,24 @@ void main() {
   });
 
   group('Perfil y vehiculos', () {
-    test('no se puede cambiar la placa de un vehiculo que esta dentro', () {
+    test('no se puede cambiar la placa de un vehiculo que esta dentro', () async {
       final v1 = service.vehicleById('v1')!;
-      expect(service.updateVehicle(v1.copyWith(plate: 'AAA111')), isNotNull);
-      expect(service.updateVehicle(v1.copyWith(description: 'Mazda 3 rojo')), isNull);
+      expect(await service.updateVehicle(v1.copyWith(plate: 'AAA111')), isNotNull);
+      expect(await service.updateVehicle(v1.copyWith(description: 'Mazda 3 rojo')), isNull);
       expect(service.vehicleById('v1')!.description, 'Mazda 3 rojo');
     });
 
-    test('valida formato de placa y evita duplicados', () {
-      expect(service.addVehicle(plate: 'abc 123', type: VehicleType.car), contains('ya esta registrada'));
-      expect(service.addVehicle(plate: 'XX1', type: VehicleType.car), contains('Formato'));
-      expect(service.addVehicle(plate: 'ABC12D', type: VehicleType.car), contains('Formato'));
-      expect(service.addVehicle(plate: 'jkl34m', type: VehicleType.motorcycle), isNull);
+    test('valida formato de placa y evita duplicados', () async {
+      expect(await service.addVehicle(plate: 'abc 123', type: VehicleType.car), contains('ya esta registrada'));
+      expect(await service.addVehicle(plate: 'XX1', type: VehicleType.car), contains('Formato'));
+      expect(await service.addVehicle(plate: 'ABC12D', type: VehicleType.car), contains('Formato'));
+      expect(await service.addVehicle(plate: 'jkl34m', type: VehicleType.motorcycle), isNull);
       expect(service.vehiclesOf('u1').map((v) => v.plate), contains('JKL34M'));
     });
 
-    test('corregir la placa no rompe la identidad: el QR sigue funcionando', () {
+    test('corregir la placa no rompe la identidad: el QR sigue funcionando', () async {
       final v2 = service.vehicleById('v2')!;
-      expect(service.updateVehicle(v2.copyWith(plate: 'XYZ788')), isNull);
+      expect(await service.updateVehicle(v2.copyWith(plate: 'XYZ788')), isNull);
       final entry = service.handleScan(service.accessCodeFor('v2')) as GateEntry;
       expect(entry.vehicle.plate, 'XYZ788');
     });

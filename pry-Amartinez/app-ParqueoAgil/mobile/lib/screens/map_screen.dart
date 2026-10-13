@@ -32,6 +32,8 @@ class _MapScreenState extends State<MapScreen> {
         return const Color(0xFFF87171); // Lighter red
       case SpotStatus.expired:
         return const Color(0xFFFB923C); // Orange
+      case SpotStatus.blocked:
+        return const Color(0xFF64748B); // Gris
     }
   }
 
@@ -252,6 +254,7 @@ class _MapScreenState extends State<MapScreen> {
       SpotStatus.free: 'Libre',
       SpotStatus.occupied: 'Ocupado',
       SpotStatus.expired: 'Vencido',
+      SpotStatus.blocked: 'Bloqueado',
     };
     final isPreferred = spot.id == _preferredSpotId;
     // El espacio preferido es para carros; las motos van a su zona.

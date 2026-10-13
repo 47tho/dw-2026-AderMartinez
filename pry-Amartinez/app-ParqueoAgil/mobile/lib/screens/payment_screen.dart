@@ -257,11 +257,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
       ),
     );
-    final saved = await _service.addCard(card);
-    if (!mounted) return true;
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Tarjeta ${saved.label} guardada (solo el token)')));
-    return true;
+    try {
+      final saved = await _service.addCard(card);
+      if (!mounted) return true;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Tarjeta ${saved.label} guardada (solo el token)')));
+      return true;
+    } catch (e) {
+      // En el modo conectado el servidor puede rechazarla (el aviso ya se mostro).
+      if (mounted) Navigator.of(context).pop();
+      return false;
+    }
   }
 }
 

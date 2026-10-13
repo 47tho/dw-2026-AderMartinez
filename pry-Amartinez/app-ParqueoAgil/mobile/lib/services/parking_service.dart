@@ -78,15 +78,19 @@ class ExitResult {
   const ExitResult(this.outcome, [this.receipt]);
 }
 
-/// Backend SIMULADO del parqueadero: espacios, usuarios, vehiculos,
-/// sesiones, pagos y recibos. La app del usuario y la terminal lo
-/// comparten. En la fase 1 esta clase se reemplaza por llamadas a la
-/// API del servidor, y el panel web ve los mismos datos en tiempo real.
+/// Estado del parqueadero que ve la app: espacios, usuario, vehiculos,
+/// sesiones, preferencias y recibos.
+///
+/// Esta clase es el modo DEMO (sin servidor): simula en memoria tambien la
+/// terminal de la porteria y los pagos. En el modo conectado se usa
+/// [RemoteParkingService], que llena este mismo estado desde la API del
+/// backend y envia los cambios al servidor; las pantallas no notan la
+/// diferencia.
 class ParkingService extends ChangeNotifier {
   static const maxPreferredZones = 3;
 
-  final List<ParkingZone> zones;
-  final Map<VehicleType, Tariff> tariffs;
+  List<ParkingZone> _zones;
+  Map<VehicleType, Tariff> _tariffs;
   final String currentUserId;
   final PaymentGatewaySimulator gateway;
   final DateTime Function() now;
@@ -104,16 +108,18 @@ class ParkingService extends ChangeNotifier {
   int _vehicleCounter;
 
   ParkingService({
-    required this.zones,
+    required List<ParkingZone> zones,
     required List<ParkingSpot> spots,
     required List<UserAccount> users,
     required List<Vehicle> vehicles,
-    required this.tariffs,
+    required Map<VehicleType, Tariff> tariffs,
     required this.currentUserId,
     Map<String, UserPreferences>? preferences,
     PaymentGatewaySimulator? gateway,
     DateTime Function()? clock,
-  })  : _spots = List.of(spots),
+  })  : _zones = List.of(zones),
+        _tariffs = Map.of(tariffs),
+        _spots = List.of(spots),
         _users = List.of(users),
         _vehicles = List.of(vehicles),
         _preferences = preferences ?? {},
@@ -121,7 +127,75 @@ class ParkingService extends ChangeNotifier {
         gateway = gateway ?? PaymentGatewaySimulator(),
         now = clock ?? DateTime.now;
 
+  // ------------------------------------------------------------ modo de uso
+
+  /// true en el modo demo: la terminal y los pagos se simulan en la app.
+  bool get isDemo => true;
+
+  /// Avisos para mostrar al usuario (ej. un cambio que el servidor rechazo).
+  final ValueNotifier<String?> notices = ValueNotifier(null);
+
+  /// Vuelve a cargar el estado (en el modo demo no hay nada que cargar).
+  Future<void> refresh() async {}
+
+  /// Reemplaza todo el estado de una vez (lo usa el modo conectado al
+  /// recibir los datos del servidor).
+  @protected
+  void applySnapshot({
+    required List<ParkingZone> zones,
+    required Map<VehicleType, Tariff> tariffs,
+    required List<ParkingSpot> spots,
+    required List<UserAccount> users,
+    required List<Vehicle> vehicles,
+    required UserPreferences preferences,
+    required List<ParkingSession> activeSessions,
+    required List<Receipt> receipts,
+    required Map<String, int> gateCounters,
+  }) {
+    _zones = List.of(zones);
+    _tariffs = Map.of(tariffs);
+    _spots
+      ..clear()
+      ..addAll(spots);
+    _users
+      ..clear()
+      ..addAll(users);
+    _vehicles
+      ..clear()
+      ..addAll(vehicles);
+    _preferences
+      ..clear()
+      ..[currentUserId] = preferences;
+    _activeByVehicle
+      ..clear()
+      ..addAll({for (final s in activeSessions) s.vehicle.id: s});
+    _receipts
+      ..clear()
+      ..addAll(receipts);
+    _gateEvents
+      ..clear()
+      ..addAll(gateCounters);
+    notifyListeners();
+  }
+
+  /// Cambia el estado de un espacio (eventos en tiempo real del servidor).
+  @protected
+  void updateSpot(String spotId, SpotStatus status) {
+    _setSpotStatus(spotId, status);
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    notices.dispose();
+    super.dispose();
+  }
+
   // ---------------------------------------------------------------- consultas
+
+  List<ParkingZone> get zones => List.unmodifiable(_zones);
+
+  Map<VehicleType, Tariff> get tariffs => Map.unmodifiable(_tariffs);
 
   List<ParkingSpot> get spots => List.unmodifiable(_spots);
 
@@ -146,7 +220,7 @@ class ParkingService extends ChangeNotifier {
 
   UserPreferences preferencesOf(String userId) => _preferences.putIfAbsent(userId, UserPreferences.new);
 
-  Tariff tariffFor(VehicleType type) => tariffs[type]!;
+  Tariff tariffFor(VehicleType type) => _tariffs[type] ?? _tariffs.values.first;
 
   List<Receipt> receiptsOf(String userId) =>
       _receipts.where((r) => r.userId == userId).toList().reversed.toList();
@@ -198,7 +272,7 @@ class ParkingService extends ChangeNotifier {
   }
 
   /// Devuelve un mensaje de error, o null si se agrego.
-  String? addVehicle({required String plate, required VehicleType type, String description = ''}) {
+  Future<String?> addVehicle({required String plate, required VehicleType type, String description = ''}) async {
     final normalized = Vehicle.normalizePlate(plate);
     final error = Vehicle.validatePlate(normalized, type) ?? _duplicatePlateError(normalized, null);
     if (error != null) return error;
@@ -214,7 +288,7 @@ class ParkingService extends ChangeNotifier {
   }
 
   /// Devuelve un mensaje de error, o null si se guardo.
-  String? updateVehicle(Vehicle updated) {
+  Future<String?> updateVehicle(Vehicle updated) async {
     final index = _vehicles.indexWhere((v) => v.id == updated.id);
     if (index == -1) return 'Vehiculo no encontrado';
     final current = _vehicles[index];

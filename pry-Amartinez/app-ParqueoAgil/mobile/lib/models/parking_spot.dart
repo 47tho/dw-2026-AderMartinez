@@ -1,5 +1,6 @@
-/// Estado individual de un espacio de parqueo.
-enum SpotStatus { free, occupied, expired }
+/// Estado individual de un espacio de parqueo. `blocked` = el
+/// administrador lo cerro (mantenimiento, reservado).
+enum SpotStatus { free, occupied, expired, blocked }
 
 /// Espacio individual. [row] y [column] son su posicion dentro de la
 /// zona; el asignador automatico las usa para calcular distancias.
