@@ -9,6 +9,8 @@ export interface TicketFilters {
   plate?: string;
   /** Limita a estos vehículos (historial del conductor). */
   vehicleIds?: number[];
+  /** Limita a los tickets a nombre de este cliente. */
+  clientId?: number;
 }
 
 export interface ITicketRepository {

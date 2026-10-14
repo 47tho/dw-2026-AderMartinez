@@ -77,16 +77,18 @@ export class DriversService {
         .getRepository(RoleUserModel)
         .create({ user_id: user.id, role_id: role.id, status: 'active' }, { transaction });
 
-      // Si el parqueadero ya lo tenía como cliente (mismo correo) se reutiliza.
-      let client = await clients.findOne({ where: { email }, transaction });
-      if (client && (await drivers.findOne({ where: { clientId: client.id }, transaction }))) {
-        throw new ApplicationException(409, 'Ya existe una cuenta con ese correo');
+      // Un registro público nunca se apropia de un cliente que ya existe (podría
+      // ser el de visitantes o el de otra persona): ese caso lo vincula el personal.
+      if (await clients.findOne({ where: { email }, transaction })) {
+        throw new ApplicationException(
+          409,
+          'Ese correo ya está registrado como cliente del parqueadero. Pide en la portería que lo vinculen.',
+        );
       }
-      if (client) {
-        await client.update({ name: dto.name, phone: dto.phone, status: 'active' }, { transaction });
-      } else {
-        client = await clients.create({ name: dto.name, email, phone: dto.phone, status: 'active' }, { transaction });
-      }
+      const client = await clients.create(
+        { name: dto.name, email, phone: dto.phone, status: 'active' },
+        { transaction },
+      );
 
       return drivers.create(
         {

@@ -48,6 +48,7 @@ describe('MeService', () => {
         findByPk: vi.fn(async () => null),
         create: vi.fn(),
         update: vi.fn(async () => [0]),
+        count: vi.fn(async () => 0),
       });
     }
     const sequelize = {
@@ -217,7 +218,7 @@ describe('MeService', () => {
       expect(inactive.update).toHaveBeenCalledWith({ vehicleTypeId: 1, description: 'nuevo', status: 'active' });
     });
 
-    it('reasigna al conductor el vehículo del cliente de visitantes y le pasa su ticket abierto', async () => {
+    it('reclama el vehículo de un visitante que ya salió, sin tocar sus tickets', async () => {
       const guest = stored({ clientId: visitor.id });
       repo(VehicleModel).findOne.mockResolvedValue(guest);
       repo(VehicleModel).findByPk.mockResolvedValue(guest);
@@ -226,11 +227,20 @@ describe('MeService', () => {
       await service.addVehicle(3, { plate: 'ABC123', vehicleTypeId: 1 });
 
       expect(repo(ClientModel).findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { email: VISITOR_EMAIL } }));
-      expect(guest.update).toHaveBeenCalledWith(
-        { clientId: 20, vehicleTypeId: 1, description: null, status: 'active' },
-        expect.anything(),
-      );
-      expect(repo(TicketModel).update).toHaveBeenCalledWith({ clientId: 20 }, expect.objectContaining({ where: expect.objectContaining({ vehicleId: 31 }) }));
+      expect(guest.update).toHaveBeenCalledWith({ clientId: 20, vehicleTypeId: 1, description: null, status: 'active' });
+      expect(repo(TicketModel).update).not.toHaveBeenCalled();
+    });
+
+    it('409 si el vehículo del visitante está dentro del parqueadero', async () => {
+      const guest = stored({ clientId: visitor.id });
+      repo(VehicleModel).findOne.mockResolvedValue(guest);
+      repo(ClientModel).findOne.mockResolvedValue(visitor);
+      repo(TicketModel).count.mockResolvedValue(1);
+
+      const error = await status(service.addVehicle(3, { plate: 'ABC123', vehicleTypeId: 1 }));
+
+      expect(error.statusCode).toBe(409);
+      expect(guest.update).not.toHaveBeenCalled();
     });
   });
 
@@ -348,13 +358,13 @@ describe('MeService', () => {
   });
 
   describe('myTickets', () => {
-    it('lista los tickets de todos los vehículos del cliente, activos o no', async () => {
+    it('lista solo los tickets a su nombre de todos sus vehículos, activos o no', async () => {
       repo(VehicleModel).findAll.mockResolvedValue([{ id: 1 }, { id: 4 }]);
 
       await service.myTickets(3, { status: 'closed', page: 2, limit: 5 });
 
       expect(repo(VehicleModel).findAll).toHaveBeenCalledWith(expect.objectContaining({ where: { clientId: 20 } }));
-      expect(listTickets.execute).toHaveBeenCalledWith({ status: 'closed', page: 2, limit: 5, vehicleIds: [1, 4] });
+      expect(listTickets.execute).toHaveBeenCalledWith({ status: 'closed', page: 2, limit: 5, vehicleIds: [1, 4], clientId: 20 });
     });
 
     it('sin vehículos devuelve una página vacía sin consultar tickets', async () => {

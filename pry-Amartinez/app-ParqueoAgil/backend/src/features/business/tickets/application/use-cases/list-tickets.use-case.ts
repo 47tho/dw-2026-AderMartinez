@@ -13,7 +13,13 @@ export class ListTicketsUseCase {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const { items, total } = await this.ticketRepo.findPage(
-      { status: query.status, zoneId: query.zoneId, plate: query.plate, vehicleIds: query.vehicleIds },
+      {
+        status: query.status,
+        zoneId: query.zoneId,
+        plate: query.plate,
+        vehicleIds: query.vehicleIds,
+        clientId: query.clientId,
+      },
       page,
       limit,
     );

@@ -133,20 +133,16 @@ export class MeService {
       await existing.update({ vehicleTypeId: type.id, description, status: 'active' });
       vehicleId = existing.id;
     } else if (existing.clientId !== driver.clientId && (await this.isVisitorClient(existing.clientId))) {
-      // Entró alguna vez como visitante sin app: el conductor lo reclama. Si
-      // está dentro, su ticket abierto pasa a su nombre para que lo cobre a él.
-      await this.sequelize.transaction(async (transaction) => {
-        await existing.update(
-          { clientId: driver.clientId, vehicleTypeId: type.id, description, status: 'active' },
-          { transaction },
-        );
-        await this.sequelize
-          .getRepository(TicketModel)
-          .update(
-            { clientId: driver.clientId },
-            { where: { vehicleId: existing.id, status: { [Op.in]: INSIDE_STATUSES } }, transaction },
-          );
-      });
+      // Entró alguna vez como visitante sin app: el conductor lo reclama, pero
+      // no mientras está dentro (ese ticket es de quien lo trajo) y sin heredar
+      // el historial anterior (el historial filtra por cliente).
+      const inside = await this.sequelize
+        .getRepository(TicketModel)
+        .count({ where: { vehicleId: existing.id, status: { [Op.in]: INSIDE_STATUSES } } });
+      if (inside > 0) {
+        throw new ApplicationException(409, `El vehículo ${plate} está dentro del parqueadero: regístralo cuando salga`);
+      }
+      await existing.update({ clientId: driver.clientId, vehicleTypeId: type.id, description, status: 'active' });
       vehicleId = existing.id;
     } else {
       throw new ApplicationException(409, `La placa ${plate} ya está registrada`);
@@ -262,6 +258,8 @@ export class MeService {
       page,
       limit,
       vehicleIds: vehicles.map((v) => v.id),
+      // Solo sus tickets: no los que esa placa tuvo antes como visitante.
+      clientId: driver.clientId,
     });
   }
 
