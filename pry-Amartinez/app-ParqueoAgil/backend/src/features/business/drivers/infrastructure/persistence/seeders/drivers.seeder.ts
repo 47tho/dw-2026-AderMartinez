@@ -9,6 +9,7 @@ import { VehicleModel } from '../../../../vehicles/infrastructure/persistence/mo
 import { VehicleTypeModel } from '../../../../vehicle-types/infrastructure/persistence/models/vehicle-type.model.js';
 import { DriversService } from '../../../application/drivers.service.js';
 import { DriverModel } from '../models/driver.model.js';
+import { demoSeedingEnabled } from '../../../../../../infrastructure/database/seeders/demo-flag.js';
 
 /**
  * Conductor de demostración (mismos datos que el modo demo de la app):
@@ -30,6 +31,8 @@ export class DriversSeeder {
   ) {}
 
   async seed(): Promise<void> {
+    // Cuenta con contraseña conocida: solo para desarrollo y demostraciones.
+    if (!demoSeedingEnabled()) return;
     const existing = await this.sequelize
       .getRepository(UserModel)
       .findOne({ where: { email: DriversSeeder.DEMO_EMAIL } });

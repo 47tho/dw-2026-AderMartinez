@@ -3,7 +3,8 @@ import type { ModelAttributeColumnOptions } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 
 /**
- * Agrega a las tablas existentes las columnas nuevas de los modelos.
+ * Agrega a las tablas existentes las columnas nuevas de los modelos (y los
+ * índices de la integración).
  *
  * `sequelize.sync({ alter: false })` crea las tablas que faltan pero no toca
  * las que ya existen, así que una base creada antes de la integración no
@@ -41,5 +42,29 @@ export async function upgradeSchema(sequelize: Sequelize): Promise<void> {
       });
       logger.log(`Columna agregada: ${table}.${column}`);
     }
+  }
+
+  await ensureIndexes(sequelize, logger);
+}
+
+/**
+ * Índices para las consultas de la portería (ticket abierto de un vehículo,
+ * espacio de un ticket, tickets abiertos) y del conductor (sus vehículos).
+ * Se crean si faltan, en bases nuevas y en las ya existentes.
+ */
+const INDEXES: { table: string; name: string; fields: string[] }[] = [
+  { table: 'tickets', name: 'ix_tickets_vehicle_status', fields: ['vehicleId', 'status'] },
+  { table: 'tickets', name: 'ix_tickets_spot', fields: ['parkingSpotId'] },
+  { table: 'tickets', name: 'ix_tickets_status_entry', fields: ['status', 'entryAt'] },
+  { table: 'vehicles', name: 'ix_vehicles_client', fields: ['clientId'] },
+];
+
+async function ensureIndexes(sequelize: Sequelize, logger: Logger): Promise<void> {
+  const queryInterface = sequelize.getQueryInterface();
+  for (const index of INDEXES) {
+    const existing = (await queryInterface.showIndex(index.table)) as { name: string }[];
+    if (existing.some((i) => i.name === index.name)) continue;
+    await queryInterface.addIndex(index.table, index.fields, { name: index.name });
+    logger.log(`Índice agregado: ${index.table}.${index.name}`);
   }
 }
