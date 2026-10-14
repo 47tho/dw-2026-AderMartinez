@@ -28,14 +28,14 @@ export class VehicleModel extends Model {
   declare clientId: number;
 
   @BelongsTo(() => ClientModel)
-  client?: ClientModel;
+  declare client?: ClientModel;
 
   @ForeignKey(() => VehicleTypeModel)
   @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false })
   declare vehicleTypeId: number;
 
   @BelongsTo(() => VehicleTypeModel)
-  vehicleType?: VehicleTypeModel;
+  declare vehicleType?: VehicleTypeModel;
 
   @Column({ type: DataType.STRING(10), allowNull: false, unique: 'uq_vehicles_plate' })
   declare plate: string;

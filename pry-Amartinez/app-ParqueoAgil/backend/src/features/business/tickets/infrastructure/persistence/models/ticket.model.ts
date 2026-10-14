@@ -21,14 +21,14 @@ export class TicketModel extends Model {
   declare clientId: number;
 
   @BelongsTo(() => ClientModel)
-  client?: ClientModel;
+  declare client?: ClientModel;
 
   @ForeignKey(() => ParkingZoneModel)
   @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false })
   declare parkingZoneId: number;
 
   @BelongsTo(() => ParkingZoneModel)
-  parkingZone?: ParkingZoneModel;
+  declare parkingZone?: ParkingZoneModel;
 
   @Column({ type: DataType.DATE, allowNull: false, defaultValue: DataType.NOW })
   declare entryAt: Date;
@@ -66,13 +66,13 @@ export class TicketModel extends Model {
   declare vehicleId: number | null;
 
   @BelongsTo(() => VehicleModel, { foreignKey: 'vehicleId', constraints: false })
-  vehicle?: VehicleModel;
+  declare vehicle?: VehicleModel;
 
   @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: true })
   declare parkingSpotId: number | null;
 
   @BelongsTo(() => ParkingSpotModel, { foreignKey: 'parkingSpotId', constraints: false })
-  parkingSpot?: ParkingSpotModel;
+  declare parkingSpot?: ParkingSpotModel;
 
   /** Cómo se abrió: QR de la app, entrada manual en portería o API directa. */
   @Column({ type: DataType.STRING(10), allowNull: false, defaultValue: 'api' })

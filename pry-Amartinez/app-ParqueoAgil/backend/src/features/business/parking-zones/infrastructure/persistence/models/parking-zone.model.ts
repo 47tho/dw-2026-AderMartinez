@@ -21,7 +21,7 @@ export class ParkingZoneModel extends Model {
   declare vehicleTypeId: number;
 
   @BelongsTo(() => VehicleTypeModel)
-  vehicleType?: VehicleTypeModel;
+  declare vehicleType?: VehicleTypeModel;
 
   @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false })
   declare capacity: number;

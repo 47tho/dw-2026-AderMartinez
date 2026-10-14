@@ -25,7 +25,7 @@ export class ParkingSpotModel extends Model {
   declare parkingZoneId: number;
 
   @BelongsTo(() => ParkingZoneModel)
-  parkingZone?: ParkingZoneModel;
+  declare parkingZone?: ParkingZoneModel;
 
   @Column({ type: DataType.STRING(10), allowNull: false, unique: 'uq_parking_spots_code' })
   declare code: string;

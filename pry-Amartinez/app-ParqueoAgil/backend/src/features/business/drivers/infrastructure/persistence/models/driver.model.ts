@@ -32,14 +32,14 @@ export class DriverModel extends Model {
   declare userId: number;
 
   @BelongsTo(() => UserModel)
-  user?: UserModel;
+  declare user?: UserModel;
 
   @ForeignKey(() => ClientModel)
   @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false, unique: 'uq_drivers_client' })
   declare clientId: number;
 
   @BelongsTo(() => ClientModel)
-  client?: ClientModel;
+  declare client?: ClientModel;
 
   @Column({ type: DataType.STRING(5), allowNull: false, defaultValue: 'CC' })
   declare docType: string;
