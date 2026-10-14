@@ -314,6 +314,9 @@ select.input {
 /* ── Tablas ───────────────────────────────────────────── */
 .table-wrap {
   overflow-x: auto;
+  /* Contiene los textos .sr-only (posición absoluta) de la tabla: sin esto
+     se ubican en la columna de la derecha y estiran la página en celular. */
+  position: relative;
 }
 table.table {
   width: 100%;
