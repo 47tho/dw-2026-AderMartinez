@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { DatabaseError, UniqueConstraintError } from 'sequelize';
 import { ApplicationException } from '../exceptions/application.exception.js';
 
 @Catch()
@@ -24,6 +25,16 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (exception instanceof ApplicationException) {
       status = exception.statusCode;
       message = exception.message;
+    } else if (exception instanceof UniqueConstraintError) {
+      // Dos peticiones iguales a la vez (doble clic): la base de datos frena la segunda.
+      status = HttpStatus.CONFLICT;
+      message = 'Ya existe un registro con esos datos';
+    } else if (
+      exception instanceof DatabaseError &&
+      (exception.parent as { code?: string } | undefined)?.code === 'ER_LOCK_DEADLOCK'
+    ) {
+      status = HttpStatus.CONFLICT;
+      message = 'Otra operación tocó los mismos datos al mismo tiempo: intenta de nuevo';
     } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       const body = exception.getResponse();

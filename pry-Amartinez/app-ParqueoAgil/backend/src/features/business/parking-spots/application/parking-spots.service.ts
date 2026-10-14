@@ -59,17 +59,19 @@ export class ParkingSpotsService {
    * ocupado no se puede tocar: primero debe salir el vehículo.
    */
   async setStatus(id: number, status: 'free' | 'blocked') {
+    const found = await this.spots.findByPk(id);
+    if (!found) throw new ApplicationException(404, `Espacio ${id} no encontrado`);
     const spot = await this.sequelize.transaction(async (t) => {
-      const current = await this.spots.findByPk(id, { lock: Transaction.LOCK.UPDATE, transaction: t });
-      if (!current) throw new ApplicationException(404, `Espacio ${id} no encontrado`);
+      // Mismo orden de bloqueo que la portería: zona y luego espacio.
+      const zone = await this.sequelize
+        .getRepository(ParkingZoneModel)
+        .findByPk(found.parkingZoneId, { lock: Transaction.LOCK.UPDATE, transaction: t });
+      const current = (await this.spots.findByPk(id, { lock: Transaction.LOCK.UPDATE, transaction: t }))!;
       if (current.status === 'occupied') {
         throw new ApplicationException(409, `El espacio ${current.code} está ocupado: primero debe salir el vehículo`);
       }
       if (current.status === status) return current;
 
-      const zone = await this.sequelize
-        .getRepository(ParkingZoneModel)
-        .findByPk(current.parkingZoneId, { lock: Transaction.LOCK.UPDATE, transaction: t });
       if (zone) {
         const delta = status === 'blocked' ? -1 : 1;
         const next = Math.min(zone.capacity, Math.max(0, zone.availableSpots + delta));

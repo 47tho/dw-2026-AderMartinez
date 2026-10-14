@@ -10,6 +10,7 @@ import { vehicleKindOf } from '../../vehicles/domain/vehicle-rules.js';
 import { VehicleModel } from '../../vehicles/infrastructure/persistence/models/vehicle.model.js';
 import { VehicleTypeModel } from '../../vehicle-types/infrastructure/persistence/models/vehicle-type.model.js';
 import { GateService } from '../application/gate.service.js';
+import { demoSeedingEnabled } from '../../../../infrastructure/database/seeders/demo-flag.js';
 
 /** Generador pseudoaleatorio con semilla: la demo sale igual en todos los equipos. */
 function seededRandom(seed: number): () => number {
@@ -29,8 +30,8 @@ function seededRandom(seed: number): () => number {
  *  - visitantes ocupando cerca del 40 % de cada zona;
  *  - salidas ya pagadas durante el día, con distintos métodos de pago.
  *
- * Solo corre si la tabla de tickets está vacía (base nueva) y se puede apagar
- * con `SEED_DEMO_ACTIVITY=false`.
+ * Solo corre si la tabla de tickets está vacía (base nueva) y si
+ * `demoSeedingEnabled()` lo permite (nunca en producción salvo que se pida).
  */
 @Injectable()
 export class DemoActivitySeeder {
@@ -43,7 +44,7 @@ export class DemoActivitySeeder {
   ) {}
 
   async seed(): Promise<void> {
-    if (process.env.SEED_DEMO_ACTIVITY === 'false') return;
+    if (!demoSeedingEnabled()) return;
     const tickets = this.sequelize.getRepository(TicketModel);
     if ((await tickets.count()) > 0) {
       this.logger.log('Seeder demo-activity: ya hay tickets, no se agrega actividad (idempotente)');

@@ -121,6 +121,9 @@ describe('AccessCode.parse', () => {
     ['contador no numérico', 'PQA1.12.1.x.0123456789abcdef'],
     ['firma que no es hexadecimal', 'PQA1.12.1.0.NOESHEXADECIMAL00'],
     ['vehículo vacío', 'PQA1..1.0.0123456789abcdef'],
+    ['contador con cero a la izquierda (reusaría un QR ya leído)', 'PQA1.12.1.00.0123456789abcdef'],
+    ['contador -0', 'PQA1.12.1.-0.0123456789abcdef'],
+    ['ventana con cero a la izquierda', 'PQA1.12.0123.0.0123456789abcdef'],
   ])('devuelve null para %s', (_label, raw) => {
     expect(AccessCode.parse(raw)).toBeNull();
   });

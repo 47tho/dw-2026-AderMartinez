@@ -49,7 +49,9 @@ export class AccessCode {
     const text = raw.trim();
     const parts = text.split('.');
     if (parts.length !== 5 || parts[0] !== AccessCode.prefix || parts[1] === '') return null;
-    if (!/^-?\d+$/.test(parts[2]) || !/^-?\d+$/.test(parts[3])) return null;
+    // Forma canónica: "00" o "-0" firmarían igual que "0" y esquivarían el
+    // control de códigos ya usados.
+    if (!/^(0|[1-9]\d*)$/.test(parts[2]) || !/^(0|[1-9]\d*)$/.test(parts[3])) return null;
     if (!/^[0-9a-f]{16}$/.test(parts[4])) return null;
     return {
       vehicleId: parts[1],

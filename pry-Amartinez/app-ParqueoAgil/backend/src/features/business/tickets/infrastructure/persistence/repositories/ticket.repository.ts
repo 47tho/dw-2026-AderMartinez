@@ -12,6 +12,7 @@ import type { TicketChannel, TicketStatus } from '../../../domain/entities/ticke
 import { ITicketRepository, TicketFilters } from '../../../domain/interfaces/ticket.repository.js';
 import { TicketNotFoundException } from '../../../domain/exceptions/ticket-not-found.exception.js';
 import { TicketCalculator } from '../../../domain/services/ticket-calculator.js';
+import { ApplicationException } from '../../../../../../common/exceptions/application.exception.js';
 import { TicketModel } from '../models/ticket.model.js';
 
 /** Relaciones que se cargan para responder placa y código de espacio. */
@@ -106,6 +107,16 @@ export class TicketRepository implements ITicketRepository {
       if (!current) {
         throw new TicketNotFoundException(id);
       }
+      // Se verifica dentro de la transacción: dos cierres a la vez, o un cierre
+      // mientras la portería cobra, no pueden liberar el cupo dos veces.
+      if (current.status !== 'open') {
+        throw new ApplicationException(409, `El ticket ${id} ya se cerró o se está cobrando en la portería`);
+      }
+      // Mismo orden de bloqueo en todo el sistema: zona y luego espacio.
+      const zone = await zoneRepo.findByPk(current.parkingZoneId, {
+        lock: Transaction.LOCK.UPDATE,
+        transaction: t,
+      });
 
       const billedUntil = current.quotedAt ?? exitAt;
       const quote = this.calculator.quote(current.entryAt, billedUntil, Number(current.hourlyRate));
@@ -136,10 +147,6 @@ export class TicketRepository implements ITicketRepository {
         );
       }
 
-      const zone = await zoneRepo.findByPk(current.parkingZoneId, {
-        lock: Transaction.LOCK.UPDATE,
-        transaction: t,
-      });
       if (zone) {
         const next = zone.availableSpots + 1;
         const capped = next > zone.capacity ? zone.capacity : next;
@@ -168,7 +175,11 @@ export class TicketRepository implements ITicketRepository {
   async findPage(filters: TicketFilters, page: number, limit: number) {
     const repo = this.sequelize.getRepository(TicketModel);
     const where: WhereOptions = {};
-    if (filters.status) Object.assign(where, { status: filters.status });
+    // Un ticket que se está cobrando ('paying') sigue estando dentro.
+    if (filters.status) {
+      Object.assign(where, { status: filters.status === 'open' ? { [Op.in]: ['open', 'paying'] } : filters.status });
+    }
+    if (filters.clientId) Object.assign(where, { clientId: filters.clientId });
     if (filters.zoneId) Object.assign(where, { parkingZoneId: filters.zoneId });
     if (filters.vehicleIds) Object.assign(where, { vehicleId: { [Op.in]: filters.vehicleIds } });
 

@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
-import { IsIn, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { JwtAuthGuard, PermissionsGuard } from '../../../auth/access/index.js';
 import type { PaymentMethodCode } from '../../drivers/infrastructure/persistence/models/driver.model.js';
 import { GateService } from '../application/gate.service.js';
@@ -41,8 +41,9 @@ export class PayTicketDto {
 
   @ApiPropertyOptional({ example: 10000, description: 'Efectivo recibido (solo method=cash)' })
   @IsOptional()
-  @IsNumber({}, { message: 'cashReceived debe ser un número' })
+  @IsInt({ message: 'cashReceived debe ser un valor en pesos, sin decimales' })
   @Min(0)
+  @Max(10_000_000, { message: 'cashReceived no puede superar $10.000.000' })
   cashReceived?: number;
 }
 
