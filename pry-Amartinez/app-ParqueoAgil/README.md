@@ -67,7 +67,10 @@ Seguir el orden. El backend crea las tablas y carga los datos de ejemplo al arra
    | Emulador de Android | `http://10.0.2.2:3003/api` |
    | Misma red Wi-Fi | `http://IP_DEL_COMPUTADOR:3003/api` |
 
-   La app también tiene un modo demo sin servidor (botón *Probar sin servidor*).
+   La app tiene dos perfiles según la cuenta que inicia sesión:
+
+   - **Conductor** (rol DRIVER): Mi QR, Mapa, Zonas, Pago y Perfil.
+   - **Lector de QR** (rol LECTOR): una sola pantalla que lee con la cámara el QR del conductor. Al entrar muestra el espacio asignado; al salir muestra el valor y, si el conductor activó el cobro automático, lo cobra. Si no, el cobro se hace en *Portería* del panel web. Si el dispositivo no tiene cámara, se puede escribir el código.
 
 ## Usuarios de prueba
 
@@ -75,6 +78,7 @@ Seguir el orden. El backend crea las tablas y carga los datos de ejemplo al arra
 |---|---|---|---|
 | `admin` | `Admin123!` | ADMIN | Panel completo, incluida la página Personal |
 | `seller` | `Seller123!` | SELLER | Operador de portería: todo el panel excepto Personal |
+| `lector` | `Lector123!` | LECTOR | App móvil, perfil lector de QR: solo leer el QR en portería y el cobro automático |
 | `conductor@parqueoagil.local` | `Conductor123!` | DRIVER | App móvil. Es el conductor Carlos Ruiz, con los vehículos ABC123 (carro), XYZ789 (carro) y QWE12F (moto) |
 
 Los accesos del panel y de la app aceptan usuario o correo.
@@ -89,8 +93,9 @@ La base recién sembrada deja a ABC123 dentro desde hace 1 h 30 min, en su espac
 2. **Celular, conductor.** Entrar con `conductor@parqueoagil.local`. En *Mi QR* elegir XYZ789 y mostrar que el código cambia cada 30 s.
 3. **Entrada.** En *Portería*, tocar *Activar cámara* y apuntar al QR del celular. El panel muestra la entrada con el espacio asignado. Como A05 está ocupado, el sistema toma el libre más cercano en las zonas preferidas (A y B). El QR del celular cambia después de la entrada.
 4. **Salida con cobro.** En el celular, elegir ABC123 y mostrar su QR. En *Portería*, leerlo: el panel muestra la cotización por fracciones de 15 min. Elegir el método de pago (por ejemplo, efectivo con cálculo de cambio) y cobrar. El ticket queda cerrado en *Tickets* y el recibo aparece en la pestaña *Pago* de la app.
-5. **Errores.** Leer otra vez el mismo QR: el panel lo rechaza porque ya fue usado. Un QR vencido también se rechaza.
-6. **Visitante.** En *Portería*, registrar la entrada de un vehículo sin app escribiendo su placa en *Placa que entra*. *Tablero* y *Mapa* se actualizan sin recargar la página.
+5. **Lector de QR en otro celular.** Entrar a la app con `lector`: aparece solo la pantalla de leer QR. Leer el QR del conductor muestra la entrada con el espacio asignado, o la salida con su valor (con cobro automático, se cobra solo).
+6. **Errores.** Leer otra vez el mismo QR: el panel lo rechaza porque ya fue usado. Un QR vencido también se rechaza.
+7. **Visitante.** En *Portería*, registrar la entrada de un vehículo sin app escribiendo su placa en *Placa que entra*. *Tablero* y *Mapa* se actualizan sin recargar la página.
 
 ## Variables nuevas del `.env`
 

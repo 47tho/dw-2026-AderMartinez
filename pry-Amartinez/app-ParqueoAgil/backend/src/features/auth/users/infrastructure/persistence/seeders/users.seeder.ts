@@ -5,9 +5,10 @@ import type { IUserRepository } from '../../../domain/interfaces/user.repository
 /**
  * Seeder de usuarios.
  *
- * Crea dos usuarios canónicos que sostienen la demostración de RBAC:
+ * Crea los usuarios canónicos que sostienen la demostración de RBAC:
  *   - admin  / Admin123!
  *   - seller / Seller123!
+ *   - lector / Lector123!  (lector de QR en la app móvil)
  *
  * Las contraseñas se guardan como hash (lo hace el hook @BeforeCreate del modelo).
  * Idempotente por username: reejecutarlo no duplica. Además **reactiva** a los
@@ -27,6 +28,11 @@ export class UsersSeeder {
       username: 'seller',
       email: 'seller@parqueoagil.local',
       password: 'Seller123!',
+    },
+    {
+      username: 'lector',
+      email: 'lector@parqueoagil.local',
+      password: 'Lector123!',
     },
   ] as const;
 

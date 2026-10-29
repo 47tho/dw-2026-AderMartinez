@@ -19,11 +19,12 @@
  * | Recursos                               | 7 |
  * | Asignaciones usuario-rol               | 5 |
  * | Concesiones rol-recurso                | 5 |
- * | Integración app + portería (conductor, portería, espacios, reportes, eventos) | 17 |
- * | **Total**                              | **75** |
+ * | Integración app + portería (conductor, portería, espacios, reportes, eventos) | 18 |
+ * | **Total**                              | **76** |
  *
  * Roles: `ADMIN` recibe todo; `SELLER` (operador de portería) los marcados con
- * `seller: true`; `DRIVER` (conductor de la app) los marcados con `driver: true`.
+ * `seller: true`; `DRIVER` (conductor de la app) los marcados con `driver: true`;
+ * `LECTOR` (lector de QR en la app) los marcados con `lector: true`.
  *
  * Nota: las operaciones de sesión (`/api/auth/*`) **no** son recursos RBAC.
  * Son OPEN o JWT: no dependen de la matriz de permisos.
@@ -36,6 +37,8 @@ export interface CatalogResource {
   seller?: boolean;
   /** `true` si el rol `DRIVER` (conductor de la app) recibe esta concesión. */
   driver?: boolean;
+  /** `true` si el rol `LECTOR` (lector de QR en la app) recibe esta concesión. */
+  lector?: boolean;
 }
 
 export const RESOURCE_CATALOG: readonly CatalogResource[] = [
@@ -76,11 +79,12 @@ export const RESOURCE_CATALOG: readonly CatalogResource[] = [
   { method: 'GET', path: '/api/parking-spots', description: 'Plano de espacios (sin placas)', seller: true, driver: true },
   { method: 'PATCH', path: '/api/parking-spots/:id', description: 'Bloquear o liberar un espacio' },
 
-  // ── Portería y cobro (4) ──────────────────────────────────────
-  { method: 'POST', path: '/api/gate/scan', description: 'Leer QR en portería (entrada o salida)', seller: true },
+  // ── Portería y cobro (5) ──────────────────────────────────────
+  { method: 'POST', path: '/api/gate/scan', description: 'Leer QR en portería (entrada o salida)', seller: true, lector: true },
   { method: 'POST', path: '/api/gate/manual-entry', description: 'Entrada manual por placa', seller: true },
   { method: 'POST', path: '/api/gate/manual-exit', description: 'Salida manual por placa', seller: true },
   { method: 'POST', path: '/api/tickets/:id/pay', description: 'Cobrar la salida', seller: true },
+  { method: 'POST', path: '/api/tickets/:id/auto-pay', description: 'Cobrar la salida con el cobro automático del conductor', seller: true, lector: true },
 
   // ── Conductores, reportes y eventos (3) ───────────────────────
   { method: 'GET', path: '/api/drivers', description: 'Listar conductores', seller: true },
@@ -144,6 +148,11 @@ export const RESOURCE_CATALOG: readonly CatalogResource[] = [
 /** Recursos que recibe el rol `SELLER`. Derivado del catálogo, no duplicado. */
 export const SELLER_RESOURCES: readonly CatalogResource[] = RESOURCE_CATALOG.filter(
   (resource) => resource.seller === true,
+);
+
+/** Recursos que recibe el rol `LECTOR` (lector de QR en la app móvil). */
+export const LECTOR_RESOURCES: readonly CatalogResource[] = RESOURCE_CATALOG.filter(
+  (resource) => resource.lector === true,
 );
 
 /** Recursos que recibe el rol `DRIVER` (conductor de la app móvil). */

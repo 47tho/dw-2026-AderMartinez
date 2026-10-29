@@ -8,7 +8,6 @@ import 'package:parqueoagil/models/vehicle.dart';
 import 'package:parqueoagil/services/access_code.dart';
 import 'package:parqueoagil/services/api/api_client.dart';
 import 'package:parqueoagil/services/api/session_store.dart';
-import 'package:parqueoagil/services/parking_service.dart';
 import 'package:parqueoagil/services/payment_gateway.dart';
 import 'package:parqueoagil/services/remote_parking_service.dart';
 
@@ -118,7 +117,6 @@ void main() {
   tearDown(() => service.dispose());
 
   test('arma el estado de la app con los datos del servidor', () {
-    expect(service.isDemo, isFalse);
     expect(service.currentUser.name, 'Carlos Ruiz');
     expect(service.zones.map((z) => z.id), ['A', 'M']);
     expect(service.zones.first.label, 'Zona A');
@@ -156,10 +154,6 @@ void main() {
     final before = backend.requests.length;
     expect(await service.addVehicle(plate: 'XX1', type: VehicleType.car), contains('Formato'));
     expect(backend.requests.length, before);
-  });
-
-  test('la terminal no se simula en el modo conectado', () {
-    expect(service.handleScan('PQA1.12.1.0.0123456789abcdef'), isA<GateRejected>());
   });
 
   test('cada peticion lleva el token de acceso', () {

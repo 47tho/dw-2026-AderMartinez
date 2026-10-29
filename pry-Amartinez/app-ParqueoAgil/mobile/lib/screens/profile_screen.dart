@@ -10,7 +10,7 @@ import '../services/parking_service.dart';
 class ProfileScreen extends StatefulWidget {
   final ParkingService service;
 
-  /// Cerrar sesion (modo conectado) o salir del modo demo.
+  /// Cerrar sesion.
   final VoidCallback? onSignOut;
 
   const ProfileScreen({super.key, required this.service, this.onSignOut});
@@ -109,7 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           OutlinedButton.icon(
             onPressed: signOut,
             icon: const Icon(Icons.logout),
-            label: Text(_service.isDemo ? 'Salir del modo demo' : 'Cerrar sesion'),
+            label: const Text('Cerrar sesion'),
             style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent),
           ),
         ],

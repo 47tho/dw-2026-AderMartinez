@@ -13,8 +13,9 @@ import type { IRoleRepository } from '../../../../roles/domain/interfaces/role.r
  *   - admin  → ADMIN
  *   - seller → SELLER
  *
- * Con esto el usuario `admin` hereda los 75 recursos de `ADMIN` y el usuario
- * `seller` los 18 de `SELLER`, sin escribir ni una fila de autorización a mano.
+ * Con esto el usuario `admin` hereda los 76 recursos de `ADMIN`, el usuario
+ * `seller` los 19 de `SELLER` y el usuario `lector` los 2 de `LECTOR`, sin
+ * escribir ni una fila de autorización a mano.
  * Los conductores reciben el rol DRIVER al registrarse desde la app.
  *
  * Idempotente: si la pareja ya existe (activa o no), se asegura de que quede
@@ -27,6 +28,7 @@ export class RoleUsersSeeder {
   private static readonly SEED_ROLE_USERS = [
     { username: 'admin', roleName: 'ADMIN' },
     { username: 'seller', roleName: 'SELLER' },
+    { username: 'lector', roleName: 'LECTOR' },
   ] as const;
 
   constructor(

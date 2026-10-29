@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../data/mock_data.dart';
 import '../models/parking_spot.dart';
 import '../models/parking_zone.dart';
 import '../models/vehicle.dart';
@@ -18,6 +17,9 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  /// Espacios por fila en el plano.
+  static const _spotsPerRow = 6;
+
   int _selectedFloor = 1;
 
   ParkingService get _service => widget.service;
@@ -95,7 +97,7 @@ class _MapScreenState extends State<MapScreen> {
     List<Widget> gridItems = [];
 
     // Convert flat list of spots into chunks of one row each
-    const perRow = MockData.spotsPerRow;
+    const perRow = _spotsPerRow;
     List<List<ParkingSpot>> chunks = [];
     for (var i = 0; i < spots.length; i += perRow) {
       chunks.add(spots.sublist(i, i + perRow > spots.length ? spots.length : i + perRow));
@@ -196,7 +198,7 @@ class _MapScreenState extends State<MapScreen> {
 
   Widget _buildSpotRow(List<ParkingSpot> rowSpots) {
     List<Widget> rowChildren = [];
-    for (int i = 0; i < MockData.spotsPerRow; i++) {
+    for (int i = 0; i < _spotsPerRow; i++) {
       if (i < rowSpots.length) {
         rowChildren.add(_buildSingleSpot(rowSpots[i]));
       } else {

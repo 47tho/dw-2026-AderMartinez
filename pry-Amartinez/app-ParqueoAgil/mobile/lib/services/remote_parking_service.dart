@@ -15,9 +15,10 @@ import 'api/live_events.dart';
 import 'parking_service.dart';
 import 'payment_gateway.dart';
 
-/// Modo CONECTADO: el mismo estado que [ParkingService], pero cargado desde
-/// el backend y con cada cambio enviado al servidor. La terminal de la
-/// porteria es el panel web, asi que aqui no se simulan entradas ni pagos.
+/// Estado del conductor conectado al servidor: el mismo estado que
+/// [ParkingService], cargado desde el backend y con cada cambio enviado al
+/// servidor. Las entradas, salidas y pagos los registra la porteria (lector
+/// de QR o panel web); la app se entera por el tiempo real.
 ///
 /// Correspondencias con la API: las zonas y los espacios se identifican en
 /// la app por su codigo ('A', 'A05') y en el servidor por su id numerico.
@@ -57,9 +58,6 @@ class RemoteParkingService extends ParkingService {
     if (live) service._startLive();
     return service;
   }
-
-  @override
-  bool get isDemo => false;
 
   @override
   Future<void> refresh() => _load();
@@ -319,13 +317,6 @@ class RemoteParkingService extends ParkingService {
           'description': updated.description.trim(),
         }));
   }
-
-  /// La terminal en el modo conectado es el panel web de la porteria.
-  @override
-  GateResult handleScan(String raw) => const GateRejected(
-        'La terminal esta en la porteria',
-        'En el modo conectado el QR lo lee el panel web del parqueadero.',
-      );
 
   void _savePreferences() {
     final prefs = preferencesOf(currentUserId);

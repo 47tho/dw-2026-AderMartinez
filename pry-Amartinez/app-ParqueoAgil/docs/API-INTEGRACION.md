@@ -13,7 +13,8 @@ Se conservan las convenciones del backend:
   `POST /api/sesion/login` o `POST /api/drivers/register`). El access token
   dura 15 min; se renueva con `POST /api/sesion/refresh`.
 - **Permisos:** matriz RBAC. Roles: `ADMIN` (todo), `SELLER` (operador de
-  portería), `DRIVER` (conductor, nuevo).
+  portería), `DRIVER` (conductor, nuevo) y `LECTOR` (lector de QR en la app:
+  solo `POST /api/gate/scan` y `POST /api/tickets/:id/auto-pay`).
 
 Los cambios son **aditivos**: los endpoints existentes responden igual, con
 campos nuevos opcionales. Una excepción intencional: `POST /api/tickets/:id/close`
@@ -88,10 +89,11 @@ type GateResult =
 
 | Método y ruta | Rol | Cuerpo → respuesta |
 |---|---|---|
-| `POST /api/gate/scan` | SELLER, ADMIN | `{ code }` → `GateResult`. Errores: 422 no es de ParqueoÁgil o firma alterada, 404 vehículo no registrado, 410 QR vencido, 409 QR ya usado, desactualizado (el contador no es el actual del vehículo) o parqueadero lleno. |
+| `POST /api/gate/scan` | SELLER, LECTOR, ADMIN | `{ code }` → `GateResult`. Errores: 422 no es de ParqueoÁgil o firma alterada, 404 vehículo no registrado, 410 QR vencido, 409 QR ya usado, desactualizado (el contador no es el actual del vehículo) o parqueadero lleno. |
 | `POST /api/gate/manual-entry` | SELLER, ADMIN | `{ plate, vehicleTypeId }` → `GateResult` (`entry`). Para visitantes sin app. |
 | `POST /api/gate/manual-exit` | SELLER, ADMIN | `{ plate }` → `GateResult` (`exit`) |
 | `POST /api/tickets/:id/pay` | SELLER, ADMIN | `{ method: PaymentMethodCode, cashReceived? }` (efectivo en pesos enteros, máx. 10.000.000) → `Ticket` cerrado. 409 si no está abierto o no tiene cotización; 402 si la pasarela rechaza; 422 si el efectivo no alcanza o si se pide `auto` y el conductor no activó el cobro automático; 503 si el pago se aprobó pero el cierre falló (reintentar: no se cobra dos veces). Seguro ante doble clic: el ticket se reclama con un `UPDATE ... WHERE status='open'` atómico; un cobro interrumpido se termina o se devuelve a `open` solo. |
+| `POST /api/tickets/:id/auto-pay` | SELLER, LECTOR, ADMIN | Sin cuerpo. Cobra la salida a la tarjeta guardada del conductor (igual que `pay` con `method: auto`) → `Ticket` cerrado. 422 si el conductor no activó el cobro automático (se cobra en el panel web). Lo usa el perfil lector de la app. |
 | `GET /api/tickets` | SELLER, ADMIN | `?status&zoneId&plate&page&limit` → `Ticket[]` paginado |
 | `GET /api/drivers` | SELLER, ADMIN | `?page&limit` → `{ id, name, email, phone, vehicles: {id, plate, kind}[], activeTickets }[]` paginado |
 | `GET /api/reports/summary` | SELLER, ADMIN | → `{ occupancy: {capacity, occupied, free, blocked, zones: [{id, code, name, capacity, occupied}]}, today: {entries, exits, revenue, byMethod: {cash, card, qr, auto}, avgMinutes}, entriesByHour: number[24] }` |

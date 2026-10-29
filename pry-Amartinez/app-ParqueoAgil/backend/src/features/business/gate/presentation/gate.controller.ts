@@ -89,4 +89,16 @@ export class TicketPaymentsController {
   pay(@Param('id', ParseIntPipe) id: number, @Body() dto: PayTicketDto) {
     return this.gate.pay(id, dto.method, dto.cashReceived);
   }
+
+  /**
+   * Cobro automático (rol LECTOR en la app). Solo cobra a la tarjeta guardada:
+   * si el conductor no activó el cobro automático responde 422 y la salida se
+   * cobra en el panel web.
+   */
+  @Post(':id/auto-pay')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Cobrar la salida con el cobro automático del conductor (lector de QR)' })
+  autoPay(@Param('id', ParseIntPipe) id: number) {
+    return this.gate.pay(id, 'auto', undefined);
+  }
 }

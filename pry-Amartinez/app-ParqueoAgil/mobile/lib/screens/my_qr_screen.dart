@@ -15,17 +15,11 @@ class MyQrScreen extends StatefulWidget {
   final String vehicleId;
   final ValueChanged<String> onSelectVehicle;
 
-  /// null abre la terminal con camara; un codigo simula su lectura.
-  /// Abre la terminal simulada (modo demo). En el modo conectado es null:
-  /// la terminal es el panel web de la porteria.
-  final ValueChanged<String?>? onOpenTerminal;
-
   const MyQrScreen({
     super.key,
     required this.service,
     required this.vehicleId,
     required this.onSelectVehicle,
-    this.onOpenTerminal,
   });
 
   @override
@@ -69,19 +63,7 @@ class _MyQrScreenState extends State<MyQrScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('ParqueoÁgil',
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-              if (widget.onOpenTerminal case final open?)
-                IconButton(
-                  icon: Icon(Icons.point_of_sale, color: Colors.blueAccent.shade100),
-                  tooltip: 'Modo terminal (camara)',
-                  onPressed: () => open(null),
-                ),
-            ],
-          ),
+          const Text('ParqueoÁgil', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
           Text(
             isParked
                 ? 'Estacionado en ${session.spotId} - ${formatDuration(session.elapsedAt(now))}'
@@ -157,55 +139,24 @@ class _MyQrScreenState extends State<MyQrScreen> {
           const SizedBox(height: 16),
           Center(child: _useNfc ? _buildNfcPanel() : _buildQrPanel(code, secondsLeft, isParked)),
           const SizedBox(height: 20),
-          if (widget.onOpenTerminal == null)
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: const Color(0xFF161B2E), borderRadius: BorderRadius.circular(14)),
-              child: Row(
-                children: [
-                  Icon(_useNfc ? Icons.nfc : Icons.qr_code_scanner, color: actionColor),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      isParked
-                          ? 'Para salir, muestra este QR en la porteria: se cobra y se abre la barrera.'
-                          : 'Muestra este QR en la porteria: la camara lo lee, te asigna un espacio y se abre la barrera.',
-                      style: const TextStyle(color: Colors.white70, fontSize: 13),
-                    ),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: const Color(0xFF161B2E), borderRadius: BorderRadius.circular(14)),
+            child: Row(
+              children: [
+                Icon(_useNfc ? Icons.nfc : Icons.qr_code_scanner, color: actionColor),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    isParked
+                        ? 'Para salir, muestra este QR en la porteria: se cobra y se abre la barrera.'
+                        : 'Muestra este QR en la porteria: la camara lo lee, te asigna un espacio y se abre la barrera.',
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
-                ],
-              ),
-            )
-          else ...[
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: actionColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                icon: Icon(_useNfc ? Icons.nfc : Icons.qr_code_scanner),
-                onPressed: () => widget.onOpenTerminal!(code),
-                label: Text(
-                  _useNfc
-                      ? 'Simular toque NFC (${isParked ? 'salida' : 'entrada'})'
-                      : 'Simular lectura en la terminal (${isParked ? 'salida' : 'entrada'})',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-              ),
+              ],
             ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.photo_camera_outlined),
-                onPressed: () => widget.onOpenTerminal!(null),
-                label: const Text('Abrir terminal con camara'),
-              ),
-            ),
-          ],
+          ),
         ],
       ),
     );

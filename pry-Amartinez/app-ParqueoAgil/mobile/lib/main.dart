@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'data/mock_data.dart';
+import 'package:http/http.dart' as http;
 import 'screens/home_shell.dart';
+import 'screens/reader_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'services/api/api_client.dart';
 import 'services/api/session_store.dart';
+import 'services/gate_reader.dart';
 import 'services/parking_service.dart';
 import 'services/remote_parking_service.dart';
 
@@ -11,9 +13,12 @@ void main() {
   runApp(const ParqueoAgilApp());
 }
 
+/// La app tiene dos perfiles segun la cuenta que inicia sesion:
+///  - conductor (rol DRIVER): sus vehiculos, su QR, el mapa y sus pagos;
+///  - lector de QR (rol LECTOR): solo la pantalla para leer el QR en porteria.
 class ParqueoAgilApp extends StatefulWidget {
   /// Permite inyectar un servicio (ej. en pruebas): la app arranca
-  /// directamente en la pantalla principal con ese servicio.
+  /// directamente en la pantalla del conductor con ese servicio.
   final ParkingService? service;
 
   /// En pruebas automaticas no hay camara: se desactiva.
@@ -22,7 +27,10 @@ class ParqueoAgilApp extends StatefulWidget {
   /// Donde se guarda la sesion (por defecto, almacenamiento seguro).
   final SessionStore? store;
 
-  const ParqueoAgilApp({super.key, this.service, this.enableCamera = true, this.store});
+  /// Cliente HTTP (en pruebas, un servidor falso).
+  final http.Client? httpClient;
+
+  const ParqueoAgilApp({super.key, this.service, this.enableCamera = true, this.store, this.httpClient});
 
   @override
   State<ParqueoAgilApp> createState() => _ParqueoAgilAppState();
@@ -31,6 +39,7 @@ class ParqueoAgilApp extends StatefulWidget {
 class _ParqueoAgilAppState extends State<ParqueoAgilApp> {
   late final SessionStore _store = widget.store ?? SecureSessionStore();
   ParkingService? _service;
+  GateReader? _reader;
   ApiClient? _api;
   bool _booting = true;
   String _serverUrl = defaultServerUrl;
@@ -47,39 +56,62 @@ class _ParqueoAgilAppState extends State<ParqueoAgilApp> {
     }
   }
 
-  /// Si quedo una sesion guardada, entra directo con los datos del servidor.
+  ApiClient _client(String url) => ApiClient(baseUrl: url, store: _store, httpClient: widget.httpClient);
+
+  /// Si quedo una sesion guardada, entra directo con el perfil de esa cuenta.
   Future<void> _restore() async {
     _serverUrl = await _store.readServerUrl() ?? defaultServerUrl;
-    final api = ApiClient(baseUrl: _serverUrl, store: _store);
+    final api = _client(_serverUrl);
     try {
       if (await api.restoreSession()) await _connect(api);
     } on ApiException catch (e) {
-      _notice = e.isNetwork ? '${e.message} Puedes reintentar o usar el modo demo.' : e.message;
+      _notice = e.isNetwork ? '${e.message} Revisa la conexion e intenta de nuevo.' : e.message;
     }
     if (mounted) setState(() => _booting = false);
   }
 
+  /// Abre la app con el perfil de la cuenta: conductor si tiene perfil de
+  /// conductor, lector si puede leer QR en porteria. Otra cuenta (ej. el
+  /// administrador del panel web) no puede usar la app.
   Future<void> _connect(ApiClient api) async {
-    final service = await RemoteParkingService.connect(api);
     api.onSessionExpired = () => _signOut(notice: 'Tu sesion termino. Vuelve a iniciar sesion.');
-    if (!mounted) {
-      service.dispose();
+    try {
+      final service = await RemoteParkingService.connect(api);
+      if (!mounted) {
+        service.dispose();
+        return;
+      }
+      setState(() {
+        _api = api;
+        _service = service;
+        _notice = null;
+      });
+      return;
+    } on ApiException catch (e) {
+      // 403 = el rol no puede ver /me (ej. LECTOR); 404 = sin perfil de conductor (ej. ADMIN).
+      if (e.status != 403 && e.status != 404) rethrow;
+    }
+
+    if (await GateReader.canRead(api)) {
+      if (!mounted) return;
+      setState(() {
+        _api = api;
+        _reader = GateReader(api);
+        _notice = null;
+      });
       return;
     }
-    setState(() {
-      _api = api;
-      _service = service;
-      _notice = null;
-    });
+    await api.logout();
+    throw const ApiException(
+        403, 'Esta cuenta no puede usar la app. Entra con una cuenta de conductor o de lector de QR.');
   }
-
-  void _startDemo() => setState(() => _service = MockData.createService());
 
   Future<void> _signOut({String? notice}) async {
     final service = _service;
     final api = _api;
     setState(() {
       _service = null;
+      _reader = null;
       _api = null;
       _notice = notice;
     });
@@ -96,6 +128,7 @@ class _ParqueoAgilAppState extends State<ParqueoAgilApp> {
   @override
   Widget build(BuildContext context) {
     final service = _service;
+    final reader = _reader;
     return MaterialApp(
       title: 'ParqueoÁgil',
       debugShowCheckedModeBanner: false,
@@ -114,16 +147,22 @@ class _ParqueoAgilAppState extends State<ParqueoAgilApp> {
               ? HomeShell(
                   key: ObjectKey(service),
                   service: service,
-                  enableCamera: widget.enableCamera,
                   onSignOut: widget.service != null ? null : () => _signOut(),
                 )
-              : WelcomeScreen(
-                  store: _store,
-                  initialServerUrl: _serverUrl,
-                  notice: _notice,
-                  onAuthenticated: _connect,
-                  onDemo: _startDemo,
-                ),
+              : reader != null
+                  ? ReaderScreen(
+                      key: ObjectKey(reader),
+                      reader: reader,
+                      enableCamera: widget.enableCamera,
+                      onSignOut: () => _signOut(),
+                    )
+                  : WelcomeScreen(
+                      store: _store,
+                      initialServerUrl: _serverUrl,
+                      notice: _notice,
+                      httpClient: widget.httpClient,
+                      onAuthenticated: _connect,
+                    ),
     );
   }
 }

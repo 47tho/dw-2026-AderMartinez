@@ -6,6 +6,7 @@ import type { IResourceRepository } from '../../../../resources/domain/interface
 import { ResourceRolesService } from '../../../application/use-cases/resource-roles.service.js';
 import {
   DRIVER_RESOURCES,
+  LECTOR_RESOURCES,
   RESOURCE_CATALOG,
   SELLER_RESOURCES,
 } from '../../../../resources/infrastructure/persistence/resource-catalog.js';
@@ -16,11 +17,12 @@ import {
  * **Este es el que construye la matriz de permisos.**
  *
  * Reparto de referencia:
- *   - ADMIN  → los 75 recursos (administración total).
- *   - SELLER → los 18 recursos de operación (clientes, vehicle-types,
+ *   - ADMIN  → los 76 recursos (administración total).
+ *   - SELLER → los 19 recursos de operación (clientes, vehicle-types,
  *     parking-zones, tickets, portería, cobro, conductores y reportes).
  *   - DRIVER → los 14 recursos de la app del conductor (/api/me, plano,
  *     zonas y eventos).
+ *   - LECTOR → 2 recursos: leer el QR en portería y el cobro automático.
  *
  * Como `reconcileRole` es determinista, reejecutar el seeder **reconcilia** el
  * catálogo: concede lo que falte, reactiva lo inactivo y retira lo que sobre.
@@ -96,6 +98,21 @@ export class ResourceRolesSeeder {
       );
     } else {
       this.logger.warn('Seeder resource-roles: rol DRIVER no encontrado, se omite');
+    }
+
+    // 5) LECTOR → solo los recursos marcados con lector: true.
+    const lector = await this.rolesRepository.findByName('LECTOR');
+    if (lector) {
+      const result = await this.service.reconcileRole(
+        lector.id,
+        idsFor(LECTOR_RESOURCES),
+      );
+      this.logger.log(
+        `Seeder resource-roles: LECTOR → ${result.total_active} recursos ` +
+          `(${result.activated} altas, ${result.deactivated} bajas)`,
+      );
+    } else {
+      this.logger.warn('Seeder resource-roles: rol LECTOR no encontrado, se omite');
     }
   }
 }

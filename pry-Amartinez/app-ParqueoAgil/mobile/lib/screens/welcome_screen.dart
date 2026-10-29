@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../models/user_account.dart';
 import '../services/api/api_client.dart';
 import '../services/api/session_store.dart';
@@ -8,22 +9,24 @@ import '../services/api/session_store.dart';
 /// http://10.0.2.2:3003/api; en la misma red Wi-Fi, la IP del computador.
 const defaultServerUrl = 'http://localhost:3003/api';
 
-/// Bienvenida: iniciar sesion o crear la cuenta de conductor contra el
-/// servidor, o entrar al modo demo (sin servidor).
+/// Bienvenida: iniciar sesion (conductor o lector de QR) o crear la cuenta
+/// de conductor contra el servidor.
 class WelcomeScreen extends StatefulWidget {
   final SessionStore store;
   final String initialServerUrl;
   final String? notice;
   final Future<void> Function(ApiClient api) onAuthenticated;
-  final VoidCallback onDemo;
+
+  /// Cliente HTTP (en pruebas, un servidor falso).
+  final http.Client? httpClient;
 
   const WelcomeScreen({
     super.key,
     required this.store,
     required this.initialServerUrl,
     required this.onAuthenticated,
-    required this.onDemo,
     this.notice,
+    this.httpClient,
   });
 
   @override
@@ -60,7 +63,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       _error = null;
     });
     final url = _server.text.trim();
-    final api = ApiClient(baseUrl: url, store: widget.store);
+    final api = ApiClient(baseUrl: url, store: widget.store, httpClient: widget.httpClient);
     try {
       await widget.store.writeServerUrl(url);
       if (_register) {
@@ -77,8 +80,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       }
       await widget.onAuthenticated(api);
     } on ApiException catch (e) {
-      if (e.status == 404) await api.logout(); // cuenta del personal: no tiene perfil de conductor
-      setState(() => _error = e.status == 401 && !_register ? 'Correo o contrasena incorrectos.' : e.message);
+      if (mounted)
+        setState(() => _error = e.status == 401 && !_register ? 'Correo o contrasena incorrectos.' : e.message);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -179,15 +182,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           helperText: 'Celular por USB: localhost con "adb reverse tcp:3003 tcp:3003". '
                               'Emulador: http://10.0.2.2:3003/api. Wi-Fi: la IP del computador.',
                         ),
-                        validator: (v) => Uri.tryParse(v ?? '')?.hasScheme == true ? null : 'Ej: http://192.168.1.10:3003/api',
+                        validator: (v) =>
+                            Uri.tryParse(v ?? '')?.hasScheme == true ? null : 'Ej: http://192.168.1.10:3003/api',
                       ),
                     ],
-                    const Divider(height: 32),
-                    OutlinedButton.icon(
-                      onPressed: _busy ? null : widget.onDemo,
-                      icon: const Icon(Icons.science_outlined),
-                      label: const Text('Probar sin servidor (modo demo)'),
-                    ),
+                    if (!_register) ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Los vigilantes entran con su cuenta de lector de QR.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white38, fontSize: 12.5),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -215,7 +221,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               child: DropdownButtonFormField<String>(
                 initialValue: _docType,
                 decoration: const InputDecoration(labelText: 'Tipo'),
-                items: [for (final t in [...UserAccount.docTypes, 'TI']) DropdownMenuItem(value: t, child: Text(t))],
+                items: [
+                  for (final t in [...UserAccount.docTypes, 'TI']) DropdownMenuItem(value: t, child: Text(t))
+                ],
                 onChanged: _busy ? null : (v) => setState(() => _docType = v ?? 'CC'),
               ),
             ),

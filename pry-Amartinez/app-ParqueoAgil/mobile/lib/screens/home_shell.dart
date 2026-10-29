@@ -4,20 +4,18 @@ import 'map_screen.dart';
 import 'my_qr_screen.dart';
 import 'payment_screen.dart';
 import 'profile_screen.dart';
-import 'terminal_screen.dart';
 import 'zones_screen.dart';
 
-/// Contenedor principal: escucha el servicio (demo o conectado al
-/// servidor), guarda el vehiculo elegido para mostrar su QR y controla la
+/// Contenedor principal del conductor: escucha el servicio conectado al
+/// servidor, guarda el vehiculo elegido para mostrar su QR y controla la
 /// barra de navegacion inferior.
 class HomeShell extends StatefulWidget {
   final ParkingService service;
-  final bool enableCamera;
 
-  /// Cerrar sesion (modo conectado) o salir del modo demo.
+  /// Cerrar sesion.
   final VoidCallback? onSignOut;
 
-  const HomeShell({super.key, required this.service, this.enableCamera = true, this.onSignOut});
+  const HomeShell({super.key, required this.service, this.onSignOut});
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -36,8 +34,8 @@ class _HomeShellState extends State<HomeShell> {
     super.initState();
     final vehicles = _service.vehiclesOf(_service.currentUserId);
     // Si ya hay un vehiculo dentro, se muestra ese (su QR es el de salida).
-    _selectedVehicleId = vehicles.where((v) => _service.activeSessionFor(v.id) != null).firstOrNull?.id ??
-        vehicles.firstOrNull?.id;
+    _selectedVehicleId =
+        vehicles.where((v) => _service.activeSessionFor(v.id) != null).firstOrNull?.id ?? vehicles.firstOrNull?.id;
     _service.notices.addListener(_showNotice);
   }
 
@@ -55,18 +53,6 @@ class _HomeShellState extends State<HomeShell> {
     _service.notices.value = null;
   }
 
-  /// Abre la terminal simulada (solo en el modo demo). Sin [code] se usa
-  /// la camara; con [code] se simula que la terminal leyo ese QR.
-  void _openTerminal(String? code) {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => TerminalScreen(
-        service: _service,
-        initialCode: code,
-        enableCamera: widget.enableCamera,
-      ),
-    ));
-  }
-
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -75,7 +61,8 @@ class _HomeShellState extends State<HomeShell> {
         final user = _service.currentUser;
         final vehicles = _service.vehiclesOf(user.id);
         // El vehiculo elegido pudo desaparecer (o ser el primero recien agregado).
-        final vehicleId = vehicles.any((v) => v.id == _selectedVehicleId) ? _selectedVehicleId : vehicles.firstOrNull?.id;
+        final vehicleId =
+            vehicles.any((v) => v.id == _selectedVehicleId) ? _selectedVehicleId : vehicles.firstOrNull?.id;
         final mySpots = <String>{
           for (final v in vehicles)
             if (_service.activeSessionFor(v.id) case final session?) session.spotId,
@@ -88,7 +75,6 @@ class _HomeShellState extends State<HomeShell> {
                   service: _service,
                   vehicleId: vehicleId,
                   onSelectVehicle: (id) => setState(() => _selectedVehicleId = id),
-                  onOpenTerminal: _service.isDemo ? _openTerminal : null,
                 ),
           MapScreen(service: _service, mySpotIds: mySpots),
           ZonesScreen(service: _service),
@@ -100,7 +86,6 @@ class _HomeShellState extends State<HomeShell> {
           body: SafeArea(
             child: RefreshIndicator(
               onRefresh: _service.refresh,
-              notificationPredicate: (_) => !_service.isDemo,
               child: IndexedStack(index: _currentIndex, children: screens),
             ),
           ),

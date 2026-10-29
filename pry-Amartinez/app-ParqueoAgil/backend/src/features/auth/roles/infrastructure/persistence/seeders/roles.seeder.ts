@@ -28,6 +28,10 @@ export class RolesSeeder {
       name: 'DRIVER',
       description: 'Conductor de la app móvil: sus vehículos, su QR y su historial',
     },
+    {
+      name: 'LECTOR',
+      description: 'Lector de QR en la app móvil: lee el QR del conductor y cobra solo el cobro automático',
+    },
   ] as const;
 
   constructor(
