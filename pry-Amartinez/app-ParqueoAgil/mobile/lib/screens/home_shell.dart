@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../models/ticket_notice.dart';
 import '../services/parking_service.dart';
+import '../widgets/ticket_notice_dialog.dart';
 import 'map_screen.dart';
 import 'my_qr_screen.dart';
 import 'payment_screen.dart';
@@ -22,10 +24,18 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
+  static const _mapTab = 1;
   static const _profileTab = 4;
 
   int _currentIndex = 0;
   String? _selectedVehicleId;
+
+  /// Espacio que se resalta en el Mapa (al tocar "Ver en el mapa").
+  String? _focusSpotId;
+
+  /// Hay una ventana de aviso abierta (un aviso nuevo la reemplaza).
+  bool _noticeOpen = false;
+  int _noticeSeq = 0;
 
   ParkingService get _service => widget.service;
 
@@ -37,11 +47,13 @@ class _HomeShellState extends State<HomeShell> {
     _selectedVehicleId =
         vehicles.where((v) => _service.activeSessionFor(v.id) != null).firstOrNull?.id ?? vehicles.firstOrNull?.id;
     _service.notices.addListener(_showNotice);
+    _service.ticketNotices.addListener(_showTicketNotice);
   }
 
   @override
   void dispose() {
     _service.notices.removeListener(_showNotice);
+    _service.ticketNotices.removeListener(_showTicketNotice);
     super.dispose();
   }
 
@@ -51,6 +63,36 @@ class _HomeShellState extends State<HomeShell> {
     if (message == null || !mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     _service.notices.value = null;
+  }
+
+  /// Entrada, salida o pago de un vehiculo del conductor (lo registro la porteria).
+  Future<void> _showTicketNotice() async {
+    final notice = _service.ticketNotices.value;
+    if (notice == null || !mounted) return;
+    _service.ticketNotices.value = null;
+    if (_noticeOpen) Navigator.of(context).pop();
+
+    // Al entrar se muestra el QR de ese vehiculo (el siguiente es el de salida).
+    final vehicle = _service.vehiclesOf(_service.currentUserId).where((v) => v.plate == notice.plate).firstOrNull;
+    if (vehicle != null) setState(() => _selectedVehicleId = vehicle.id);
+    // Ya salio: el espacio que se resaltaba en el mapa ya no es suyo.
+    if (notice is PaymentNotice) setState(() => _focusSpotId = null);
+
+    final zoneId = notice is EntryNotice ? notice.zoneId : null;
+    final zone = _service.zones.where((z) => z.id == zoneId).firstOrNull;
+    final seq = ++_noticeSeq;
+    _noticeOpen = true;
+    final openMap = await showDialog<bool>(
+      context: context,
+      builder: (_) => TicketNoticeDialog(notice: notice, zone: zone),
+    );
+    if (seq == _noticeSeq) _noticeOpen = false;
+    if (openMap == true && notice is EntryNotice && mounted) {
+      setState(() {
+        _currentIndex = _mapTab;
+        _focusSpotId = notice.spotId;
+      });
+    }
   }
 
   @override
@@ -76,7 +118,7 @@ class _HomeShellState extends State<HomeShell> {
                   vehicleId: vehicleId,
                   onSelectVehicle: (id) => setState(() => _selectedVehicleId = id),
                 ),
-          MapScreen(service: _service, mySpotIds: mySpots),
+          MapScreen(service: _service, mySpotIds: mySpots, focusSpotId: _focusSpotId),
           ZonesScreen(service: _service),
           vehicleId == null ? noVehicle : PaymentScreen(service: _service, vehicleId: vehicleId),
           ProfileScreen(service: _service, onSignOut: widget.onSignOut),

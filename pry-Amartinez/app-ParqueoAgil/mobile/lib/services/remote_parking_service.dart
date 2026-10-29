@@ -8,6 +8,7 @@ import '../models/payment_method.dart';
 import '../models/receipt.dart';
 import '../models/saved_card.dart';
 import '../models/tariff.dart';
+import '../models/ticket_notice.dart';
 import '../models/user_account.dart';
 import '../models/vehicle.dart';
 import 'api/api_client.dart';
@@ -239,8 +240,68 @@ class RemoteParkingService extends ParkingService {
         updateSpot(data['code'] as String, _spotStatus(data['status'] as String));
       case 'ticket.opened' || 'ticket.quoted' || 'ticket.closed':
         // Solo llegan los tickets de mis vehiculos: cambia mi QR y mi sesion.
-        _safeRefresh();
+        // El aviso se muestra cuando el estado ya se recargo (asi "Ver en el
+        // mapa" encuentra el espacio ocupado).
+        final notice = noticeFor(type, data);
+        _load().then((_) {
+          if (notice != null) ticketNotices.value = notice;
+        }).catchError((Object _) {});
     }
+  }
+
+  /// Arma el aviso a partir del ticket que manda el servidor en el evento.
+  @visibleForTesting
+  TicketNotice? noticeFor(String type, Map<String, dynamic> t) {
+    try {
+      final vehicle = vehicleById('${t['vehicleId']}');
+      final plate = (t['plate'] as String?) ?? vehicle?.plate ?? '';
+      final entryTime = DateTime.parse(t['entryAt'] as String).toLocal();
+      // Misma regla que el servidor: precio de la fraccion desde la tarifa de la zona.
+      final hourly = t['hourlyRate'] as num?;
+      final tariff = hourly == null
+          ? tariffFor(vehicle?.type ?? VehicleType.car)
+          : Tariff(pricePerFraction: (hourly * 15 / 60).round());
+      switch (type) {
+        case 'ticket.opened':
+          return EntryNotice(
+            plate: plate,
+            entryTime: entryTime,
+            spotId: (t['spotCode'] as String?) ?? '',
+            zoneId: _zoneCodes[t['parkingZoneId']],
+            tariff: tariff,
+          );
+        case 'ticket.quoted':
+          // El evento aun no trae el total: se calcula igual que el servidor
+          // con la hora en que se leyo el QR de salida.
+          final quotedAt = DateTime.parse((t['quotedAt'] as String?) ?? DateTime.now().toIso8601String()).toLocal();
+          final elapsed = quotedAt.difference(entryTime);
+          final prefs = preferencesOf(currentUserId);
+          final auto = prefs.paymentMethod is AutoChargePayment ? prefs.savedCard?.label : null;
+          return ExitQuoteNotice(
+            plate: plate,
+            entryTime: entryTime,
+            quotedAt: quotedAt,
+            fractions: tariff.fractions(elapsed),
+            total: tariff.amountFor(elapsed),
+            autoChargeCard: auto,
+          );
+        case 'ticket.closed':
+          final method = t['paymentMethod'] as String?;
+          return PaymentNotice(
+            plate: plate,
+            entryTime: entryTime,
+            exitTime: DateTime.parse((t['exitAt'] as String?) ?? DateTime.now().toIso8601String()).toLocal(),
+            total: (t['total'] as num).toInt(),
+            reference: (t['paymentRef'] as String?) ?? 'T${t['id']}',
+            methodName: _methodFromCode(method).name,
+            cardLabel: t['cardLabel'] as String?,
+            change: method == 'cash' ? (t['change'] as num?)?.toInt() : null,
+          );
+      }
+    } catch (_) {
+      // Un evento con datos incompletos solo recarga, sin ventana.
+    }
+    return null;
   }
 
   void _safeRefresh() {

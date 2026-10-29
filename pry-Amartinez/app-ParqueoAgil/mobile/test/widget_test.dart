@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parqueoagil/main.dart';
+import 'package:parqueoagil/models/tariff.dart';
+import 'package:parqueoagil/models/ticket_notice.dart';
 import 'package:parqueoagil/services/api/session_store.dart';
 import 'package:parqueoagil/services/payment_gateway.dart';
 import 'support/fake_gate_backend.dart';
@@ -107,5 +109,79 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Esta cuenta no puede usar la app'), findsOneWidget);
     expect(backend.requests.any((r) => r.url.path == '/api/sesion/logout'), isTrue);
+  });
+
+  group('Ventanas emergentes del conductor', () {
+    testWidgets('entrada: muestra el espacio asignado y lleva al mapa', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.5;
+      addTearDown(tester.view.reset);
+      final service = SampleData.createService(gateway: PaymentGatewaySimulator(latency: Duration.zero));
+      await tester.pumpWidget(ParqueoAgilApp(service: service, enableCamera: false));
+      await tester.pump();
+
+      service.ticketNotices.value = EntryNotice(
+        plate: 'XYZ789',
+        entryTime: DateTime(2026, 10, 5, 9, 41),
+        spotId: 'D03',
+        zoneId: 'D',
+        tariff: const Tariff(pricePerFraction: 750),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Tu espacio es D03'), findsOneWidget);
+      expect(find.text('Zona D · Piso 2'), findsOneWidget);
+      expect(find.descendant(of: find.byType(AlertDialog), matching: find.text('XYZ789')), findsOneWidget);
+      expect(find.text('Entrada 9:41 a. m.'), findsOneWidget);
+      expect(find.textContaining(r'$750 cada 15 min'), findsOneWidget);
+
+      await tester.tap(find.text('Ver en el mapa'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Tu espacio es D03'), findsNothing);
+      expect(find.text('Piso 2'), findsOneWidget); // el mapa abrio en el piso del espacio
+    });
+
+    testWidgets('salida sin cobro automatico: dice el valor y que se paga en caja', (tester) async {
+      final service = SampleData.createService(gateway: PaymentGatewaySimulator(latency: Duration.zero));
+      await tester.pumpWidget(ParqueoAgilApp(service: service, enableCamera: false));
+      await tester.pump();
+
+      service.ticketNotices.value = ExitQuoteNotice(
+        plate: 'ABC123',
+        entryTime: DateTime(2026, 10, 5, 10, 0),
+        quotedAt: DateTime(2026, 10, 5, 11, 31),
+        fractions: 7,
+        total: 5300,
+        autoChargeCard: null,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text(r'Valor a pagar $5.300'), findsOneWidget);
+      expect(find.textContaining('Paga en la caja'), findsOneWidget);
+    });
+
+    testWidgets('pago aprobado: total, recibo y buen viaje', (tester) async {
+      final service = SampleData.createService(gateway: PaymentGatewaySimulator(latency: Duration.zero));
+      await tester.pumpWidget(ParqueoAgilApp(service: service, enableCamera: false));
+      await tester.pump();
+
+      service.ticketNotices.value = PaymentNotice(
+        plate: 'ABC123',
+        entryTime: DateTime(2026, 10, 5, 10, 0),
+        exitTime: DateTime(2026, 10, 5, 11, 31),
+        total: 5300,
+        reference: 'PA-000041',
+        methodName: 'Cobro automatico',
+        cardLabel: 'Visa •••• 4242',
+        change: null,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text(r'$5.300 · buen viaje'), findsOneWidget);
+      expect(find.text('Recibo PA-000041'), findsOneWidget);
+      expect(find.text('Cobro automatico · Visa •••• 4242'), findsOneWidget);
+    });
   });
 }

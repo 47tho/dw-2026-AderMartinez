@@ -5,6 +5,7 @@ import '../models/parking_zone.dart';
 import '../models/payment_method.dart';
 import '../models/receipt.dart';
 import '../models/saved_card.dart';
+import '../models/ticket_notice.dart';
 import '../models/tariff.dart';
 import '../models/user_account.dart';
 import '../models/vehicle.dart';
@@ -80,6 +81,10 @@ class ParkingService extends ChangeNotifier {
   /// Avisos para mostrar al usuario (ej. un cambio que el servidor rechazo).
   final ValueNotifier<String?> notices = ValueNotifier(null);
 
+  /// Entradas, salidas y pagos de mis vehiculos que registro la porteria
+  /// (la pantalla principal los muestra en una ventana emergente).
+  final ValueNotifier<TicketNotice?> ticketNotices = ValueNotifier(null);
+
   /// Vuelve a cargar el estado (sin servidor no hay nada que cargar).
   Future<void> refresh() async {}
 
@@ -133,6 +138,7 @@ class ParkingService extends ChangeNotifier {
   @override
   void dispose() {
     notices.dispose();
+    ticketNotices.dispose();
     super.dispose();
   }
 

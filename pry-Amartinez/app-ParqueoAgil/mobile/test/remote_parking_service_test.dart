@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:parqueoagil/models/parking_spot.dart';
 import 'package:parqueoagil/models/payment_method.dart';
+import 'package:parqueoagil/models/ticket_notice.dart';
 import 'package:parqueoagil/models/vehicle.dart';
 import 'package:parqueoagil/services/access_code.dart';
 import 'package:parqueoagil/services/api/api_client.dart';
@@ -159,5 +160,51 @@ void main() {
   test('cada peticion lleva el token de acceso', () {
     final me = backend.requests.firstWhere((r) => r.url.path == '/api/me');
     expect(me.headers['Authorization'], 'Bearer acc');
+  });
+
+  group('avisos de la porteria (tiempo real)', () {
+    const ticket = {
+      'id': 41,
+      'vehicleId': 12,
+      'plate': 'ABC123',
+      'parkingZoneId': 1,
+      'spotCode': 'A05',
+      'hourlyRate': 3000,
+      'entryAt': '2026-10-05T15:00:00.000Z',
+    };
+
+    test('entrada: espacio, zona de la app y tarifa de la zona', () {
+      final notice = service.noticeFor('ticket.opened', ticket) as EntryNotice;
+      expect(notice.spotId, 'A05');
+      expect(notice.zoneId, 'A');
+      expect(notice.plate, 'ABC123');
+      expect(notice.tariff.pricePerFraction, 750);
+    });
+
+    test('salida: el valor se calcula como en el servidor (1 h 31 min -> 7 fracciones)', () {
+      final notice = service.noticeFor('ticket.quoted', {...ticket, 'quotedAt': '2026-10-05T16:31:00.000Z'}) as ExitQuoteNotice;
+      expect(notice.fractions, 7);
+      expect(notice.total, 5300);
+      expect(notice.autoChargeCard, isNull);
+    });
+
+    test('pago: total, recibo y cambio en efectivo', () {
+      final notice = service.noticeFor('ticket.closed', {
+        ...ticket,
+        'exitAt': '2026-10-05T16:31:00.000Z',
+        'total': 5300,
+        'paymentRef': 'PA-000041',
+        'paymentMethod': 'cash',
+        'change': 4700,
+      }) as PaymentNotice;
+      expect(notice.total, 5300);
+      expect(notice.reference, 'PA-000041');
+      expect(notice.methodName, 'Efectivo');
+      expect(notice.change, 4700);
+    });
+
+    test('un evento incompleto no rompe la app: solo no muestra ventana', () {
+      expect(service.noticeFor('ticket.opened', {'id': 41}), isNull);
+    });
   });
 }

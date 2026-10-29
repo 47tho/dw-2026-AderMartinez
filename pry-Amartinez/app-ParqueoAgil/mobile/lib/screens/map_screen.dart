@@ -10,7 +10,10 @@ class MapScreen extends StatefulWidget {
   final ParkingService service;
   final Set<String> mySpotIds;
 
-  const MapScreen({super.key, required this.service, required this.mySpotIds});
+  /// Espacio a resaltar (ej. el recien asignado); el mapa abre en su piso.
+  final String? focusSpotId;
+
+  const MapScreen({super.key, required this.service, required this.mySpotIds, this.focusSpotId});
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -21,6 +24,16 @@ class _MapScreenState extends State<MapScreen> {
   static const _spotsPerRow = 6;
 
   int _selectedFloor = 1;
+
+  @override
+  void didUpdateWidget(MapScreen old) {
+    super.didUpdateWidget(old);
+    final focus = widget.focusSpotId;
+    if (focus != null && focus != old.focusSpotId) {
+      final zone = _service.spots.where((s) => s.id == focus).map((s) => _service.zoneById(s.zoneId)).firstOrNull;
+      if (zone != null) _selectedFloor = zone.floor;
+    }
+  }
 
   ParkingService get _service => widget.service;
   String? get _preferredSpotId => _service.preferencesOf(_service.currentUserId).preferredSpotId;
@@ -51,7 +64,12 @@ class _MapScreenState extends State<MapScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Plano del Parqueadero', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              const Expanded(
+                child: Text('Plano del Parqueadero',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
@@ -215,6 +233,7 @@ class _MapScreenState extends State<MapScreen> {
   Widget _buildSingleSpot(ParkingSpot spot) {
     final isMyCar = widget.mySpotIds.contains(spot.id);
     final isPreferred = spot.id == _preferredSpotId;
+    final isFocus = spot.id == widget.focusSpotId;
 
     return GestureDetector(
       onTap: () => _showSpotDetail(spot, isMyCar),
@@ -227,7 +246,11 @@ class _MapScreenState extends State<MapScreen> {
           boxShadow: isMyCar ? [
             BoxShadow(color: Colors.blueAccent.withValues(alpha: 0.6), blurRadius: 10, spreadRadius: 2)
           ] : null,
-          border: isMyCar ? Border.all(color: Colors.white, width: 1.5) : null,
+          border: isFocus
+              ? Border.all(color: Colors.amber, width: 3)
+              : isMyCar
+                  ? Border.all(color: Colors.white, width: 1.5)
+                  : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
